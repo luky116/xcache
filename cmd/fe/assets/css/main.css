@@ -30,7 +30,7 @@ body {
 }
 
 .status_label_error {
-    background-color: red;
+    background-color: #fb0404;
     color: white;
     font-weight: bold;
     padding: 3px
