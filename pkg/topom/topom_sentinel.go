@@ -262,7 +262,7 @@ func (s *Topom) SentinelRemoveGroupsAll() error {
 func (s *Topom) SentinelRemoveGroup(gid int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	return s.SentinelRemoveGroupNoLock(gid)
 }
 

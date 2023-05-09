@@ -5,12 +5,12 @@ package redis
 
 import (
 	"container/list"
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"fmt"
 
 	"github.com/CodisLabs/codis/pkg/utils/errors"
 	"github.com/CodisLabs/codis/pkg/utils/math2"
@@ -160,7 +160,7 @@ func (c *Client) BinlogOffset() (int, int, error) {
 		}
 		if key := strings.TrimSpace(kv[0]); key == "binlog_offset" {
 			binlog_offset := strings.SplitN(strings.TrimSpace(kv[1]), " ", 2)
-			if (len(binlog_offset) == 2) {
+			if len(binlog_offset) == 2 {
 				filenum, err = strconv.Atoi(binlog_offset[0])
 				if err != nil {
 					return 0, 0, errors.Trace(err)
@@ -251,9 +251,9 @@ func SlowLogParse(resp interface{}) (string, error) {
 		resp_preffix += " "
 		i = i / 10
 		if i <= 0 {
-		    break
+			break
 		}
-	} 
+	}
 	format_str := fmt.Sprintf("%%%dd", index_len)
 	for i, v := range resp_arr {
 		slow_log, err := redigo.Values(v, nil)
@@ -270,8 +270,8 @@ func SlowLogParse(resp interface{}) (string, error) {
 		if err != nil {
 			return "", errors.Trace(err)
 		}
-		for j:=0; j<len(cmd); j++ {
-			if j != 0{
+		for j := 0; j < len(cmd); j++ {
+			if j != 0 {
 				response += resp_preffix + "     "
 			}
 			response += strconv.Itoa(j+1) + ") " + cmd[j] + "\r\n"

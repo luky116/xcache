@@ -240,7 +240,6 @@ func (s *Router) SetReplicaQuickConn(quick int) {
 	s.pool.replica.SetQuickConn(quick)
 }
 
-
 func (s *Router) SwitchMasters(masters map[int]string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

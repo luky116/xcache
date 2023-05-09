@@ -4,55 +4,55 @@
 package topom
 
 import (
-	"sync"
-	"strings"
 	"strconv"
+	"strings"
+	"sync"
 
 	"github.com/CodisLabs/codis/pkg/utils/errors"
 	"github.com/CodisLabs/codis/pkg/utils/log"
 )
 
 const (
-	ExpansionActionNothing  	= 0
-	ExpansionActionDataSync 	= 1
-	ExpansionActionBackup 		= 2
-	ExpansionActionSlotsMgrt 	= 3
-	ExpansionActionDataClean 	= 4
-	ExpansionStepNothing		= 0
-	ExpansionStepRunning		= 1
-	ExpansionStepFinshed		= 2
-	ExpansionStepSlotsreload	= 1
-	ExpansionStepSlotsdel		= 2
-	ExpansionStepDelSlotsKey	= 3
-	ExpansionStepCompact		= 4
-	ExpansionDataCleanFinshed	= 5
+	ExpansionActionNothing    = 0
+	ExpansionActionDataSync   = 1
+	ExpansionActionBackup     = 2
+	ExpansionActionSlotsMgrt  = 3
+	ExpansionActionDataClean  = 4
+	ExpansionStepNothing      = 0
+	ExpansionStepRunning      = 1
+	ExpansionStepFinshed      = 2
+	ExpansionStepSlotsreload  = 1
+	ExpansionStepSlotsdel     = 2
+	ExpansionStepDelSlotsKey  = 3
+	ExpansionStepCompact      = 4
+	ExpansionDataCleanFinshed = 5
 )
 
 type expansionPlan struct {
-	mu sync.Mutex
-	Id int
-	SrcGid int
-	DstGid int
-	SlotsList string
-	SyncSpeed int
+	mu         sync.Mutex
+	Id         int
+	SrcGid     int
+	DstGid     int
+	SlotsList  string
+	SyncSpeed  int
 	BinlogNums int
-	SlotsArr []int
-	MajorStep int
-	MinorStep int
-	Status string
-	Error string
+	SlotsArr   []int
+	MajorStep  int
+	MinorStep  int
+	Status     string
+	Error      string
 }
 
 var expansionLock sync.Mutex
 var expansionPlanList = make([]*expansionPlan, 0)
-var planDelimiter = "$";
+var planDelimiter = "$"
 
 func (s *Topom) ExpansionPullPlan() string {
 	expansionLock.Lock()
 	defer expansionLock.Unlock()
 
 	resp := ""
-	for i:=0; i<len(expansionPlanList); i++ {
+	for i := 0; i < len(expansionPlanList); i++ {
 		resp += strconv.Itoa(expansionPlanList[i].Id) + planDelimiter
 		resp += strconv.Itoa(expansionPlanList[i].SrcGid) + planDelimiter
 		resp += strconv.Itoa(expansionPlanList[i].DstGid) + planDelimiter
@@ -106,7 +106,7 @@ func (s *Topom) ExpansionAddPlan(planStr string) error {
 		}
 
 		slotsList := plan[2]
-		slice, err := s.getSlotsList(slotsList, srcGid, dstGid);
+		slice, err := s.getSlotsList(slotsList, srcGid, dstGid)
 		if err != nil {
 			return err
 		}
@@ -138,7 +138,7 @@ func (s *Topom) ExpansionAddPlan(planStr string) error {
 		newPlan.Status = "-"
 		newPlan.Error = "-"
 		expansionPlanList = append(expansionPlanList, newPlan)
-		log.Warnf("Expansion: add a new expansion plan-[%d]: %s",id, planStr)
+		log.Warnf("Expansion: add a new expansion plan-[%d]: %s", id, planStr)
 	}
 
 	return nil
@@ -150,7 +150,7 @@ func (s *Topom) ExpansionDelPlan(planId int) error {
 
 	var slice = make([]*expansionPlan, 0, len(expansionPlanList))
 	var isPlanExist = false
-	for i:=0; i<len(expansionPlanList); i++ {
+	for i := 0; i < len(expansionPlanList); i++ {
 		if expansionPlanList[i].Id == planId {
 			if expansionPlanList[i].MinorStep == ExpansionStepRunning || (expansionPlanList[i].MajorStep == ExpansionActionDataClean && expansionPlanList[i].MinorStep <= ExpansionStepCompact) {
 				return errors.New("plan is running")
@@ -162,11 +162,11 @@ func (s *Topom) ExpansionDelPlan(planId int) error {
 		}
 	}
 	expansionPlanList = slice
-	
+
 	if isPlanExist {
-	    log.Warnf("Expansion: del plan-[%d] success",planId)
+		log.Warnf("Expansion: del plan-[%d] success", planId)
 	} else {
-	    return errors.New("plan not exist!")
+		return errors.New("plan not exist!")
 	}
 
 	return nil
@@ -174,7 +174,7 @@ func (s *Topom) ExpansionDelPlan(planId int) error {
 
 func maxExpansionPlanId() int {
 	maxId := 0
-	for i:=0; i<len(expansionPlanList); i++ {
+	for i := 0; i < len(expansionPlanList); i++ {
 		if expansionPlanList[i].Id > maxId {
 			maxId = expansionPlanList[i].Id
 		}
@@ -183,7 +183,7 @@ func maxExpansionPlanId() int {
 }
 
 func isConflictGid(gid int) bool {
-	for i:=0; i<len(expansionPlanList); i++ {
+	for i := 0; i < len(expansionPlanList); i++ {
 		if expansionPlanList[i].SrcGid == gid || expansionPlanList[i].DstGid == gid {
 			return true
 		}
@@ -202,7 +202,7 @@ func (s *Topom) ExpansionDataSync(planId int) error {
 
 	if err := s.ExpansionExecDataSync(plan); err != nil {
 		return err
-	} 
+	}
 
 	return nil
 }
@@ -228,7 +228,7 @@ func (s *Topom) ExpansionSlotsMgrt(planId int) error {
 	defer expansionLock.Unlock()
 
 	plan := getExpansionPlanById(planId)
-	if (plan == nil) {
+	if plan == nil {
 		return errors.New("expansion plan is not exsit.")
 	}
 
@@ -244,7 +244,7 @@ func (s *Topom) ExpansionDateClean(planId int) error {
 	defer expansionLock.Unlock()
 
 	plan := getExpansionPlanById(planId)
-	if (plan == nil) {
+	if plan == nil {
 		return errors.New("expansion plan is not exsit.")
 	}
 
@@ -257,10 +257,10 @@ func (s *Topom) ExpansionDateClean(planId int) error {
 
 func getExpansionPlanById(planId int) *expansionPlan {
 	var plan *expansionPlan = nil
-	for i:=0; i<len(expansionPlanList); i++ {
-		if (expansionPlanList[i].Id == planId) {
+	for i := 0; i < len(expansionPlanList); i++ {
+		if expansionPlanList[i].Id == planId {
 			plan = expansionPlanList[i]
-			break;
+			break
 		}
 	}
 

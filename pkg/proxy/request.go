@@ -23,11 +23,11 @@ type Request struct {
 	OpFlagMonitor
 	CustomCheckFunc
 
-	Database int32
-	ReceiveTime int64
-	SendToServerTime int64
+	Database              int32
+	ReceiveTime           int64
+	SendToServerTime      int64
 	ReceiveFromServerTime int64
-	TasksLen    int64
+	TasksLen              int64
 
 	*redis.Resp
 	Err error

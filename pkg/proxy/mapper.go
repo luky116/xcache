@@ -31,9 +31,9 @@ func init() {
 }
 
 type OpFlag uint32
-type OpFlagMonitor uint32  //监控大key，大value的标志位
+type OpFlagMonitor uint32 //监控大key，大value的标志位
 
-//标志位：读写，快慢命令判断
+// 标志位：读写，快慢命令判断
 func (f OpFlag) IsNotAllowed() bool {
 	return (f & FlagNotAllow) != 0
 }
@@ -48,7 +48,7 @@ func (f OpFlag) IsMasterOnly() bool {
 	return (f & mask) != 0
 }
 
-//只要没有慢标志就认为是快命令
+// 只要没有慢标志就认为是快命令
 func (f OpFlag) IsQuick() bool {
 	const mask = FlagSureSlow | FlagMaySlow
 	return (f & mask) == 0
@@ -64,7 +64,7 @@ func (f OpFlag) IsMayQuick() bool {
 	return (f & mask) != 0
 }
 
-//标志位：大key，大value判断
+// 标志位：大key，大value判断
 func (f OpFlagMonitor) NeedCheckBatchsizeOfRequest() bool {
 	const mask = FlagReqKeys | FlagReqKeyFields
 	return (f & mask) != 0
@@ -75,7 +75,7 @@ func (f OpFlagMonitor) NeedCheckContentOfRequest() bool {
 	return (f & mask) != 0
 }
 
-func (f OpFlagMonitor) NeedCheckSingleValueOfResp () bool {
+func (f OpFlagMonitor) NeedCheckSingleValueOfResp() bool {
 	const mask = FlagRespReturnSingleValue
 	return (f & mask) != 0
 }
@@ -96,56 +96,56 @@ func (f OpFlagMonitor) IsHighRisk() bool {
 }
 
 type CustomCheckFunc interface {
-	CheckRequest(r *Request, s *Session) bool //return true表示检查过了
+	CheckRequest(r *Request, s *Session) bool               //return true表示检查过了
 	CheckResponse(r *Request, s *Session, delay int64) bool //return true表示检查过了
 }
 
 type OpInfo struct {
-	Name string
-	Flag OpFlag
+	Name        string
+	Flag        OpFlag
 	FlagMonitor OpFlagMonitor
 	CustomCheckFunc
 }
 
 const (
-	FlagWrite = 1 << iota   //1
-	FlagMasterOnly			//2
-	FlagMayWrite			//4
-	FlagNotAllow			//8
-	FlagSureQuick			//16
-	FlagMayQuick			//32
-	FlagSureSlow			//64
-	FlagMaySlow				//128
+	FlagWrite      = 1 << iota //1
+	FlagMasterOnly             //2
+	FlagMayWrite               //4
+	FlagNotAllow               //8
+	FlagSureQuick              //16
+	FlagMayQuick               //32
+	FlagSureSlow               //64
+	FlagMaySlow                //128
 )
 
 const (
 	// -- 请求部分
 	// 1. 请求包含多个key或多个成员，没有值，即不需要考虑数据量的大小
-	FlagReqKeys = 1 << iota              // 1     参数为：CMD Key1 ~ KeyN
-	FlagReqKeyFields                     // 2     参数为：CMD KEY Field1 ~ FieldN
+	FlagReqKeys      = 1 << iota // 1     参数为：CMD Key1 ~ KeyN
+	FlagReqKeyFields             // 2     参数为：CMD KEY Field1 ~ FieldN
 
 	// 2. 请求不光包含key或成员，还操作了响应的值，需要检查数据量
-	FlagReqValues                        // 4     参数为：CMD KEY Value1 ~ ValueN
-	FlagReqKeyValues                     // 8     参数为：CMD (Key1,Value1) ~ (KeyN,ValueN)
-	FlagReqKeyFieldValues                // 16    参数为：CMD KEY (Field1,Value1) ~ (FieldN,ValueN)
-	FlagReqKeyTtlValue					 // 32    参数为：CMD KEY ttl value
+	FlagReqValues         // 4     参数为：CMD KEY Value1 ~ ValueN
+	FlagReqKeyValues      // 8     参数为：CMD (Key1,Value1) ~ (KeyN,ValueN)
+	FlagReqKeyFieldValues // 16    参数为：CMD KEY (Field1,Value1) ~ (FieldN,ValueN)
+	FlagReqKeyTtlValue    // 32    参数为：CMD KEY ttl value
 
 	// -- 响应部分
 	// 1. 响应返回的是单个数字，代表key的成员数量或者key本身大小（如果key是string类型），即对key的统计结果
-	FlagRespReturnArraysize              // 64    返回值是数组的长度
-	FlagRespReturnValuesize              //	128    返回值是string的长度
+	FlagRespReturnArraysize // 64    返回值是数组的长度
+	FlagRespReturnValuesize //	128    返回值是string的长度
 
 	// 2. 响应返回的是查询结果，代表key本身或者一部分
-	FlagRespReturnSingleValue            // 256   返回值是单个值
-	FlagRespReturnArray                  // 512   返回为数组，一个为一组
-	FlagRespReturnArrayByPair            // 1024   返回为数组，两个为一组
+	FlagRespReturnSingleValue // 256   返回值是单个值
+	FlagRespReturnArray       // 512   返回为数组，一个为一组
+	FlagRespReturnArrayByPair // 1024   返回为数组，两个为一组
 
 	// 3. 响应返回的是数组，但是只要检查数组大小，数组的内容不要检查
-	FlagRespCheckArrayLength             // 2048  返回为数组，一个为一组, 只检查数组的长度，不检查数组内容
-	FlagRespCheckArrayLengthByPair       // 4096  返回为数组，两个为一组, 只检查数组的长度，不检查数组内容
+	FlagRespCheckArrayLength       // 2048  返回为数组，一个为一组, 只检查数组的长度，不检查数组内容
+	FlagRespCheckArrayLengthByPair // 4096  返回为数组，两个为一组, 只检查数组的长度，不检查数组内容
 
 	// -- 命令本身是高危操作，高危操作一定要被记录，即使不一定有风险
-	FlagHighRisk                         // 8192  高风险命令
+	FlagHighRisk // 8192  高风险命令
 )
 
 var opTable = make(map[string]*OpInfo, 256)
@@ -274,7 +274,7 @@ func init() {
 		{"SELECT", 0, 0, nil},
 		{"SET", FlagWrite, 0, &CheckSET{}},
 		{"SETBIT", FlagWrite, 0, nil},
-		{"SETEX", FlagWrite, FlagReqKeyTtlValue, nil},  // 特殊，因为包含特殊参数ttl
+		{"SETEX", FlagWrite, FlagReqKeyTtlValue, nil}, // 特殊，因为包含特殊参数ttl
 		{"SETNX", FlagWrite, FlagReqKeyValues, nil},
 		{"SETRANGE", FlagWrite, FlagReqKeyFieldValues | FlagRespReturnValuesize, nil}, // 特殊，因为包含特殊参数offset
 		{"SHUTDOWN", FlagNotAllow, 0, nil},
@@ -329,11 +329,11 @@ func init() {
 		{"XSLOWLOG", 0, 0, nil},
 		{"XMONITOR", 0, 0, nil},
 		{"XCONFIG", 0, 0, nil},
-		{"ZADD", FlagWrite, 0, nil},  //特殊，因为需要解析，版本较高时接收多种参数
+		{"ZADD", FlagWrite, 0, nil}, //特殊，因为需要解析，版本较高时接收多种参数
 		{"ZCARD", 0, FlagRespReturnArraysize, nil},
 		{"ZCOUNT", 0, 0, nil},
-		{"ZINCRBY", FlagWrite, 0, nil},           //特殊，因为需要解析
-		{"ZINTERSTORE", FlagWrite, 0, nil},           //特殊，因为需要解析，解析较复杂
+		{"ZINCRBY", FlagWrite, 0, nil},     //特殊，因为需要解析
+		{"ZINTERSTORE", FlagWrite, 0, nil}, //特殊，因为需要解析，解析较复杂
 		{"ZLEXCOUNT", 0, 0, nil},
 		{"ZRANGE", 0, 0, &CheckZRANGE{}},
 		{"ZRANGEBYLEX", 0, 0, nil},
@@ -409,28 +409,28 @@ func getOpInfo(multi []*redis.Resp) (string, OpFlag, OpFlagMonitor, CustomCheckF
 	return string(op), FlagMayWrite, 0, nil, nil
 }
 
-func getCmdFlag() *redis.Resp{
+func getCmdFlag() *redis.Resp {
 	//array must init, or array is nil when there is no slowlog
 	var array []*redis.Resp = make([]*redis.Resp, 0, 32)
 	const mask = FlagSureQuick | FlagMayQuick | FlagSureSlow | FlagMaySlow
 
 	for _, r := range opTable {
-		if r.Flag & mask != 0 {
+		if r.Flag&mask != 0 {
 			retstr := r.Name + " : Flag[" + strconv.Itoa(int(r.Flag)) + "]"
 
-			if r.Flag & FlagSureQuick != 0 {
+			if r.Flag&FlagSureQuick != 0 {
 				retstr += ", FlagSureQuick"
 			}
 
-			if r.Flag & FlagMayQuick != 0 {
+			if r.Flag&FlagMayQuick != 0 {
 				retstr += ", FlagMayQuick"
 			}
 
-			if r.Flag & FlagSureSlow != 0 {
+			if r.Flag&FlagSureSlow != 0 {
 				retstr += ", FlagSureSlow"
 			}
 
-			if r.Flag & FlagMaySlow != 0 {
+			if r.Flag&FlagMaySlow != 0 {
 				retstr += ", FlagMaySlow"
 			}
 
@@ -460,7 +460,7 @@ func setQuickCmdList(cmdlist string) error {
 		if r, ok := opTable[strings.TrimSpace(cmds[i])]; ok {
 			log.Infof("before setQuickCmdList: r.Name[%s], r.Flag[%d]", r.Name, r.Flag)
 			//如果命令被设置了慢标志则返回失败
-			if r.Flag & FlagSureSlow == 0 {
+			if r.Flag&FlagSureSlow == 0 {
 				r.Flag = r.Flag &^ FlagMayQuick
 				r.Flag = r.Flag &^ FlagMaySlow
 				r.Flag = r.Flag | FlagSureQuick
@@ -479,7 +479,7 @@ func setQuickCmdList(cmdlist string) error {
 	return nil
 }
 
-//用于proxy启动时通过配置文件为不存在的命令设置快慢命令标志
+// 用于proxy启动时通过配置文件为不存在的命令设置快慢命令标志
 func setQuickCmdListForStart(cmdlist string) error {
 	//设置快慢标志时加锁，防止命令被同时设置快命令和慢命令
 	cmdsflag.Lock()
@@ -500,7 +500,7 @@ func setQuickCmdListForStart(cmdlist string) error {
 		if r, ok := opTable[strings.TrimSpace(cmds[i])]; ok {
 			log.Infof("before setQuickCmdList: r.Name[%s], r.Flag[%d]", r.Name, r.Flag)
 			//如果命令被设置了慢标志则返回失败
-			if r.Flag & FlagSureSlow == 0 {
+			if r.Flag&FlagSureSlow == 0 {
 				r.Flag = r.Flag &^ FlagMayQuick
 				r.Flag = r.Flag &^ FlagMaySlow
 				r.Flag = r.Flag | FlagSureQuick
@@ -541,7 +541,7 @@ func setSlowCmdList(cmdlist string) error {
 		if r, ok := opTable[strings.TrimSpace(cmds[i])]; ok {
 			log.Infof("before setSlowCmdList: r.Name[%s], r.Flag[%d]", r.Name, r.Flag)
 			//如果命令被设置了快标志则返回失败
-			if r.Flag & FlagSureQuick == 0 {
+			if r.Flag&FlagSureQuick == 0 {
 				r.Flag = r.Flag &^ FlagMayQuick
 				r.Flag = r.Flag &^ FlagMaySlow
 				r.Flag = r.Flag | FlagSureSlow
@@ -560,7 +560,7 @@ func setSlowCmdList(cmdlist string) error {
 	return nil
 }
 
-//用于proxy启动时通过配置文件为不存在的命令设置快慢命令标志
+// 用于proxy启动时通过配置文件为不存在的命令设置快慢命令标志
 func setSlowCmdListForStart(cmdlist string) error {
 	//设置快慢标志时加锁，防止命令被同时设置快命令和慢命令
 	cmdsflag.Lock()
@@ -580,7 +580,7 @@ func setSlowCmdListForStart(cmdlist string) error {
 		if r, ok := opTable[strings.TrimSpace(cmds[i])]; ok {
 			log.Infof("before setSlowCmdList: r.Name[%s], r.Flag[%d]", r.Name, r.Flag)
 			//如果命令被设置了快标志则返回失败
-			if r.Flag & FlagSureQuick == 0 {
+			if r.Flag&FlagSureQuick == 0 {
 				r.Flag = r.Flag &^ FlagMayQuick
 				r.Flag = r.Flag &^ FlagMaySlow
 				r.Flag = r.Flag | FlagSureSlow
@@ -602,14 +602,14 @@ func setSlowCmdListForStart(cmdlist string) error {
 	return nil
 }
 
-//加读写锁保证全局设置quicklist和slowlist的时候，flag不会被其他操作修改
+// 加读写锁保证全局设置quicklist和slowlist的时候，flag不会被其他操作修改
 func setMaySlowOpFlag(op string) error {
 	cmdsflag.RLock()
 	defer cmdsflag.RUnlock()
 	//如果命令设置为FlagSureQuick或FlagSureSlow者则不允许命令设置为慢命令
 	const mask = FlagSureQuick | FlagSureSlow
 	if r, ok := opTable[strings.ToUpper(op)]; ok {
-		if r.Flag & mask == 0 {
+		if r.Flag&mask == 0 {
 			r.Flag = r.Flag | FlagMaySlow
 		}
 	} else {
@@ -626,7 +626,7 @@ func clearMaySlowOpFlag(op string) error {
 	const mask = FlagSureQuick | FlagSureSlow
 	if r, ok := opTable[strings.ToUpper(op)]; ok {
 		//如果命令设置为sureslow则不需要清除命令慢标志
-		if r.Flag & mask == 0 {
+		if r.Flag&mask == 0 {
 			r.Flag = r.Flag &^ FlagMaySlow
 		}
 	} else {
@@ -670,7 +670,7 @@ func getWholeCmd(multi []*redis.Resp, cmd []byte) int {
 		if index < len(cmd) {
 			index += copy(cmd[index:], multi[i].Value)
 
-			if i < len(multi) - 1 {
+			if i < len(multi)-1 {
 				index += copy(cmd[index:], []byte(" "))
 			}
 		}
@@ -678,7 +678,7 @@ func getWholeCmd(multi []*redis.Resp, cmd []byte) int {
 		bytes += len(multi[i].Value)
 
 		//遍历所有元素后，如果cmd切片被填满则添加统计信息
-		if i == len(multi) - 1 && index == len(cmd) {
+		if i == len(multi)-1 && index == len(cmd) {
 			more := []byte("... " + strconv.Itoa(len(multi)) + " elements " + strconv.Itoa(bytes) + " bytes.")
 			index = len(cmd) - len(more)
 			if index < 0 {
@@ -686,7 +686,7 @@ func getWholeCmd(multi []*redis.Resp, cmd []byte) int {
 			}
 
 			index += copy(cmd[index:], more)
-			break;
+			break
 		}
 	}
 

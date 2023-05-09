@@ -180,13 +180,13 @@ breaker_key_black_list = ""
 `
 
 type Config struct {
-	Ncpu           int     `toml:"ncpu"`
-	Log            string  `toml:"log"`
-	ExpireLogDays  int     `toml:"expire_log_days"`
-	LogLevel       string  `toml:"log_level"`
-	PidFile        string  `toml:"pidfile"`
+	Ncpu          int    `toml:"ncpu"`
+	Log           string `toml:"log"`
+	ExpireLogDays int    `toml:"expire_log_days"`
+	LogLevel      string `toml:"log_level"`
+	PidFile       string `toml:"pidfile"`
 
-	ConfigFileName	string    		`toml:"-" json:"config_file_name"`
+	ConfigFileName string `toml:"-" json:"config_file_name"`
 
 	ProtoType string `toml:"proto_type" json:"proto_type"`
 	ProxyAddr string `toml:"proxy_addr" json:"proxy_addr"`
@@ -195,21 +195,21 @@ type Config struct {
 	HostProxy string `toml:"-" json:"-"`
 	HostAdmin string `toml:"-" json:"-"`
 
-	JodisName       string            `toml:"jodis_name" json:"jodis_name"`
-	JodisAddr       string            `toml:"jodis_addr" json:"jodis_addr"`
-	JodisAuth       string            `toml:"jodis_auth" json:"jodis_auth"`
-	JodisTimeout    timesize.Duration `toml:"jodis_timeout" json:"jodis_timeout"`
-	JodisCompatible bool              `toml:"jodis_compatible" json:"jodis_compatible"`
-	JodisProxySubDir  string         `toml:"jodis_proxy_subdir" json:"jodis_proxy_subdir"`
+	JodisName        string            `toml:"jodis_name" json:"jodis_name"`
+	JodisAddr        string            `toml:"jodis_addr" json:"jodis_addr"`
+	JodisAuth        string            `toml:"jodis_auth" json:"jodis_auth"`
+	JodisTimeout     timesize.Duration `toml:"jodis_timeout" json:"jodis_timeout"`
+	JodisCompatible  bool              `toml:"jodis_compatible" json:"jodis_compatible"`
+	JodisProxySubDir string            `toml:"jodis_proxy_subdir" json:"jodis_proxy_subdir"`
 
 	ProductName string `toml:"product_name" json:"product_name"`
 	ProductAuth string `toml:"product_auth" json:"-"`
 	SessionAuth string `toml:"session_auth" json:"-"`
 
-	ProxyDataCenter      string         `toml:"proxy_datacenter" json:"proxy_datacenter"`
-	ProxyMaxClients      int            `toml:"proxy_max_clients" json:"proxy_max_clients"`
-	ProxyMaxOffheapBytes bytesize.Int64 `toml:"proxy_max_offheap_size" json:"proxy_max_offheap_size"`
-	ProxyHeapPlaceholder bytesize.Int64 `toml:"proxy_heap_placeholder" json:"proxy_heap_placeholder"`
+	ProxyDataCenter         string            `toml:"proxy_datacenter" json:"proxy_datacenter"`
+	ProxyMaxClients         int               `toml:"proxy_max_clients" json:"proxy_max_clients"`
+	ProxyMaxOffheapBytes    bytesize.Int64    `toml:"proxy_max_offheap_size" json:"proxy_max_offheap_size"`
+	ProxyHeapPlaceholder    bytesize.Int64    `toml:"proxy_heap_placeholder" json:"proxy_heap_placeholder"`
 	ProxyRefreshStatePeriod timesize.Duration `toml:"proxy_refresh_state_period" json:"proxy_refresh_state_period"`
 
 	BackendPingPeriod      timesize.Duration `toml:"backend_ping_period" json:"backend_ping_period"`
@@ -234,26 +234,26 @@ type Config struct {
 	SessionKeepAlivePeriod timesize.Duration `toml:"session_keepalive_period" json:"session_keepalive_period"`
 	SessionBreakOnFailure  bool              `toml:"session_break_on_failure" json:"session_break_on_failure"`
 
-	SlowlogLogSlowerThan   int64 			 `toml:"slowlog_log_slower_than" json:"slowlog_log_slower_than"`
-	SlowlogMaxLen          int64 			 `toml:"slowlog_max_len" json:"slowlog_max_len"`
-	QuickCmdList		   string            	 `toml:"quick_cmd_list" json:"quick_cmd_list"`
-	SlowCmdList		   	   string        `toml:"slow_cmd_list" json:"slow_cmd_list"`
-	AutoSetSlowFlag		   bool			 `toml:"auto_set_slow_flag" json:"auto_set_slow_flag"`
+	SlowlogLogSlowerThan int64  `toml:"slowlog_log_slower_than" json:"slowlog_log_slower_than"`
+	SlowlogMaxLen        int64  `toml:"slowlog_max_len" json:"slowlog_max_len"`
+	QuickCmdList         string `toml:"quick_cmd_list" json:"quick_cmd_list"`
+	SlowCmdList          string `toml:"slow_cmd_list" json:"slow_cmd_list"`
+	AutoSetSlowFlag      bool   `toml:"auto_set_slow_flag" json:"auto_set_slow_flag"`
 
-	MonitorMaxValueLen         int64   `toml:"monitor_max_value_len" json:"monitor_max_value_len"`
-	MonitorMaxBatchsize        int64   `toml:"monitor_max_batchsize" json:"monitor_max_batchsize"`
-	MonitorMaxCmdInfo          int64   `toml:"monitor_max_cmd_info" json:"monitor_max_cmd_info"`
-	MonitorLogMaxLen           int64   `toml:"monitor_log_max_len" json:"monitor_log_max_len"`
-	MonitorResultSetSize       int64   `toml:"monitor_result_set_size" json:"monitor_result_set_size"`
-	MonitorEnabled             int64   `toml:"monitor_enabled" json:"monitor_enabled"`
+	MonitorMaxValueLen   int64 `toml:"monitor_max_value_len" json:"monitor_max_value_len"`
+	MonitorMaxBatchsize  int64 `toml:"monitor_max_batchsize" json:"monitor_max_batchsize"`
+	MonitorMaxCmdInfo    int64 `toml:"monitor_max_cmd_info" json:"monitor_max_cmd_info"`
+	MonitorLogMaxLen     int64 `toml:"monitor_log_max_len" json:"monitor_log_max_len"`
+	MonitorResultSetSize int64 `toml:"monitor_result_set_size" json:"monitor_result_set_size"`
+	MonitorEnabled       int64 `toml:"monitor_enabled" json:"monitor_enabled"`
 
-	BreakerEnabled                 int64   `toml:"breaker_enabled" json:"breaker_enabled"`
-	BreakerDegradationProbability  int64   `toml:"breaker_degradation_probability" json:"breaker_degradation_probability"`
-	BreakerQpsLimitation           int64   `toml:"breaker_qps_limitation" json:"breaker_qps_limitation"`
-	BreakerCmdWhiteList            string  `toml:"breaker_cmd_white_list" json:"breaker_cmd_white_list"`
-	BreakerCmdBlackList            string  `toml:"breaker_cmd_black_list" json:"breaker_cmd_black_list"`
-	BreakerKeyWhiteList            string  `toml:"breaker_key_white_list" json:"breaker_key_white_list"`
-	BreakerKeyBlackList            string  `toml:"breaker_key_black_list" json:"breaker_key_black_list"`
+	BreakerEnabled                int64  `toml:"breaker_enabled" json:"breaker_enabled"`
+	BreakerDegradationProbability int64  `toml:"breaker_degradation_probability" json:"breaker_degradation_probability"`
+	BreakerQpsLimitation          int64  `toml:"breaker_qps_limitation" json:"breaker_qps_limitation"`
+	BreakerCmdWhiteList           string `toml:"breaker_cmd_white_list" json:"breaker_cmd_white_list"`
+	BreakerCmdBlackList           string `toml:"breaker_cmd_black_list" json:"breaker_cmd_black_list"`
+	BreakerKeyWhiteList           string `toml:"breaker_key_white_list" json:"breaker_key_white_list"`
+	BreakerKeyBlackList           string `toml:"breaker_key_black_list" json:"breaker_key_black_list"`
 }
 
 func NewDefaultConfig() *Config {
@@ -412,7 +412,7 @@ func (c *Config) Validate() error {
 	if c.MonitorResultSetSize < 0 {
 		return errors.New("invalid monitor_result_set_size")
 	}
-	if c.BreakerEnabled != 0 && c.BreakerEnabled != 1{
+	if c.BreakerEnabled != 0 && c.BreakerEnabled != 1 {
 		return errors.New("invalid breaker_enabled")
 	}
 	if c.BreakerDegradationProbability < 0 {

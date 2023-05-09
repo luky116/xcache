@@ -136,22 +136,22 @@ func (ctx *context) toReplicaGroups(gid int, p *models.Proxy) [][]string {
 		return nil
 	}
 	/*
-	var dc string
-	var ip net.IP
-	if p != nil {
-		dc = p.DataCenter
-		ip = ctx.lookupIPAddr(p.AdminAddr)
-	}
-	getPriority := func(s *models.GroupServer) int {
-		if ip == nil || dc != s.DataCenter {
-			return 2
+		var dc string
+		var ip net.IP
+		if p != nil {
+			dc = p.DataCenter
+			ip = ctx.lookupIPAddr(p.AdminAddr)
 		}
-		if ip.Equal(ctx.lookupIPAddr(s.Addr)) {
-			return 0
-		} else {
-			return 1
-		}
-	}*/
+		getPriority := func(s *models.GroupServer) int {
+			if ip == nil || dc != s.DataCenter {
+				return 2
+			}
+			if ip.Equal(ctx.lookupIPAddr(s.Addr)) {
+				return 0
+			} else {
+				return 1
+			}
+		}*/
 	var groups [3][]string
 	/*for _, s := range g.Servers {
 		if s.ReplicaGroup {

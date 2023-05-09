@@ -4,8 +4,8 @@
 package proxy
 
 import (
-	"encoding/json"
 	"container/list"
+	"encoding/json"
 	"github.com/CodisLabs/codis/pkg/proxy/redis"
 	"github.com/CodisLabs/codis/pkg/utils/log"
 	"github.com/CodisLabs/codis/pkg/utils/sync2/atomic2"
@@ -15,37 +15,38 @@ import (
 	"unsafe"
 )
 
-const mlogMaxLenMax = 100000		//10W	about max use 8G memory
+const mlogMaxLenMax = 100000 //10W	about max use 8G memory
 const mlogMaxLenDefault = 10000
 
-//used by trylock
+// used by trylock
 const mlogMutexLocked = 1 << iota
 
 const MONITOR_GET_BIG_KEY = 1
 const MONITOR_GET_RISK_CMD = 2
 const MONITOR_GET_ALL = 3
 
-//implement trylock for sync.Mutex
+// implement trylock for sync.Mutex
 type MlogMutex struct {
 	sync.Mutex
 }
+
 func (m *MlogMutex) TryLock() bool {
 	return atomic.CompareAndSwapInt32((*int32)(unsafe.Pointer(&m.Mutex)), 0, mlogMutexLocked)
 }
 
 type MlogEntry struct {
-	id        int64   	//记录ID
-	log     	*Record  	//记录内容
+	id  int64   //记录ID
+	log *Record //记录内容
 }
 
 type MonitorLog struct {
 	MlogMutex
-	loglist 	*list.List
-	logid		atomic2.Int64
-	maxlen		atomic2.Int64
+	loglist *list.List
+	logid   atomic2.Int64
+	maxlen  atomic2.Int64
 }
 
-var mlog  = &MonitorLog{}
+var mlog = &MonitorLog{}
 
 func init() {
 	mlog.loglist = list.New()
@@ -65,10 +66,12 @@ func MonitorLogSetMaxLen(maxlen int64) {
 	}
 }
 
-/*外层先通过MlogListGetCurId()接口获取logId，然后再调用MlogListPushFront()将日志插入，
-  如果MlogListPushFront()获取锁失败将忽略该条记录，因此logId将不连续
+/*
+外层先通过MlogListGetCurId()接口获取logId，然后再调用MlogListPushFront()将日志插入，
+
+	如果MlogListPushFront()获取锁失败将忽略该条记录，因此logId将不连续
 */
-func MonitorLogGetCurId() int64{
+func MonitorLogGetCurId() int64 {
 	return mlog.logid.Incr()
 }
 
@@ -88,13 +91,13 @@ func MonitorLogPushBack(e *MlogEntry) {
 	}
 }
 
-func MonitorLogLen() *redis.Resp{
+func MonitorLogLen() *redis.Resp {
 	defer mlog.Unlock()
 	mlog.Lock()
 	return redis.NewString([]byte(strconv.Itoa(mlog.loglist.Len())))
 }
 
-func MonitorLogReset(force bool) *redis.Resp{
+func MonitorLogReset(force bool) *redis.Resp {
 	defer mlog.Unlock()
 	mlog.Lock()
 
@@ -126,7 +129,7 @@ func monitorLogToResp(e *MlogEntry) *redis.Resp {
 	})
 }
 
-func MonitorLogGetByNum(num int64, recordType int64) *redis.Resp{
+func MonitorLogGetByNum(num int64, recordType int64) *redis.Resp {
 	//从尾部（最新的记录）开始获取num条记录
 	defer mlog.Unlock()
 	mlog.Lock()
@@ -151,22 +154,22 @@ func MonitorLogGetByNum(num int64, recordType int64) *redis.Resp{
 
 		if e, ok := iter.Value.(*MlogEntry); ok && e != nil && e.log != nil {
 			switch recordType {
-				case MONITOR_GET_BIG_KEY:
-					// 只返回大key、大value监控
-					if e.log.AbnormalType != TYPE_HIGH_RISK {
-						array = append(array, monitorLogToResp(e))
-						i++
-					}
-				case MONITOR_GET_RISK_CMD:
-					// 只返回高危命令
-					if e.log.AbnormalType == TYPE_HIGH_RISK {
-						array = append(array, monitorLogToResp(e))
-						i++
-					}
-				default:
-					// 返回所有类型
+			case MONITOR_GET_BIG_KEY:
+				// 只返回大key、大value监控
+				if e.log.AbnormalType != TYPE_HIGH_RISK {
 					array = append(array, monitorLogToResp(e))
 					i++
+				}
+			case MONITOR_GET_RISK_CMD:
+				// 只返回高危命令
+				if e.log.AbnormalType == TYPE_HIGH_RISK {
+					array = append(array, monitorLogToResp(e))
+					i++
+				}
+			default:
+				// 返回所有类型
+				array = append(array, monitorLogToResp(e))
+				i++
 			}
 		} else {
 			log.Warnf("MonitorlogGet cant parse iter.Value[%+v] to MonitorlogEntry.", iter.Value)
@@ -178,7 +181,7 @@ func MonitorLogGetByNum(num int64, recordType int64) *redis.Resp{
 	return redis.NewArray(array)
 }
 
-func MonitorLogGetById(id int64, num int64, recordType int64) *redis.Resp{
+func MonitorLogGetById(id int64, num int64, recordType int64) *redis.Resp {
 	defer mlog.Unlock()
 	mlog.Lock()
 
@@ -201,7 +204,7 @@ func MonitorLogGetById(id int64, num int64, recordType int64) *redis.Resp{
 		return redis.NewArray(make([]*redis.Resp, 0))
 	}
 
-	if num > lastId - id + 1 {  //如果索取的数量比（尾部-游标）的间隔还大，则只取（尾部-游标）之间的元素
+	if num > lastId-id+1 { //如果索取的数量比（尾部-游标）的间隔还大，则只取（尾部-游标）之间的元素
 		num = lastId - id + 1
 	}
 
@@ -235,18 +238,18 @@ func MonitorLogGetById(id int64, num int64, recordType int64) *redis.Resp{
 
 		if e, ok := iter.Value.(*MlogEntry); ok && e != nil && e.log != nil {
 			switch recordType {
-				case MONITOR_GET_BIG_KEY:
-					// 只返回大key、大value监控
-					if e.log.AbnormalType != TYPE_HIGH_RISK {
-						array = append(array, monitorLogToResp(e))
-					}
-				case MONITOR_GET_RISK_CMD:
-					// 只返回高危命令
-					if e.log.AbnormalType == TYPE_HIGH_RISK {
-						array = append(array, monitorLogToResp(e))
-					}
-				default:
+			case MONITOR_GET_BIG_KEY:
+				// 只返回大key、大value监控
+				if e.log.AbnormalType != TYPE_HIGH_RISK {
 					array = append(array, monitorLogToResp(e))
+				}
+			case MONITOR_GET_RISK_CMD:
+				// 只返回高危命令
+				if e.log.AbnormalType == TYPE_HIGH_RISK {
+					array = append(array, monitorLogToResp(e))
+				}
+			default:
+				array = append(array, monitorLogToResp(e))
 			}
 		} else {
 			log.Warnf("monitorlogGet cont parse iter.Value[%v] to monitorlogEntry.", iter.Value)
@@ -257,60 +260,3 @@ func MonitorLogGetById(id int64, num int64, recordType int64) *redis.Resp{
 
 	return redis.NewArray(array)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -4,11 +4,11 @@
 package topom
 
 import (
-	"time"
-	"strings"
-	"strconv"
-	"os/exec"
 	"os"
+	"os/exec"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/CodisLabs/codis/pkg/models"
 	"github.com/CodisLabs/codis/pkg/utils/errors"
@@ -192,7 +192,7 @@ func (s *Topom) GroupDelServer(gid int, addr string) error {
 		//send slaveof no one to slave
 		c, err := redis.NewClient(addr, s.config.ProductAuth, time.Second)
 		if err != nil {
-			log.WarnErrorf(err, "creat slave-[%s] client failed", addr)	
+			log.WarnErrorf(err, "creat slave-[%s] client failed", addr)
 		}
 		defer c.Close()
 
@@ -264,12 +264,12 @@ func (s *Topom) GroupPromoteServer(gid int, addr string, force bool) error {
 	}
 
 	//一键主从切换
-	if (!force) {
+	if !force {
 		master_addr := ctx.getGroupMaster(gid)
 		c_master, err := redis.NewClient(master_addr, s.config.ProductAuth, time.Second)
 		if err != nil {
 			log.WarnErrorf(err, "creat master-[%s] client failed", master_addr)
-			return errors.New("Client connection failed, Master may be down!")	
+			return errors.New("Client connection failed, Master may be down!")
 		}
 		defer c_master.Close()
 
@@ -294,7 +294,7 @@ func (s *Topom) GroupPromoteServer(gid int, addr string, force bool) error {
 
 		if master_filenum != slave_filenum_beg || master_offset != slave_offset_beg {
 			//104857600: max size of each binlog file
-			diff :=  (master_filenum - slave_filenum_beg) * 104857600 + master_offset - slave_offset_beg
+			diff := (master_filenum-slave_filenum_beg)*104857600 + master_offset - slave_offset_beg
 
 			time.Sleep(500 * time.Millisecond)
 
@@ -305,12 +305,12 @@ func (s *Topom) GroupPromoteServer(gid int, addr string, force bool) error {
 			}
 
 			//speed 1000ms 500ms
-			speed := ((slave_filenum_end - slave_filenum_beg) * 104857600 + (slave_offset_end - slave_offset_beg)) * 1000 / 500 
+			speed := ((slave_filenum_end-slave_filenum_beg)*104857600 + (slave_offset_end - slave_offset_beg)) * 1000 / 500
 
-			if  (speed == 0 && diff != 0) || (speed * 3 < diff) {
+			if (speed == 0 && diff != 0) || (speed*3 < diff) {
 				return errors.New("Master and Slave offset cannot be same within the time limit!")
 			}
-		} 
+		}
 
 		//master停写后再次获取主从偏移量,用于计算主从切换需要的时长
 		can_promote := false
@@ -324,7 +324,7 @@ func (s *Topom) GroupPromoteServer(gid int, addr string, force bool) error {
 			}
 		}()
 
-		if (slave_filenum_beg == master_filenum && master_offset == slave_offset_beg) {
+		if slave_filenum_beg == master_filenum && master_offset == slave_offset_beg {
 			can_promote = true
 		} else {
 			master_filenum, master_offset, err = c_master.BinlogOffset()
@@ -332,21 +332,21 @@ func (s *Topom) GroupPromoteServer(gid int, addr string, force bool) error {
 				log.WarnErrorf(err, "get master-[%s] binlog offset failed", master_addr)
 				return errors.New("Failed to get binlog offset, Master may be down!")
 			}
-			for i:=0; i<60; i++ {
+			for i := 0; i < 60; i++ {
 				time.Sleep(50 * time.Millisecond)
 				slave_filenum_beg, slave_offset_beg, err = c_slave.BinlogOffset()
 				if err != nil {
 					log.WarnErrorf(err, "get slave-[%s] binlog offset failed", addr)
 					return errors.New("Failed to get binlog offset, Slave may be down!")
 				}
-				if (slave_filenum_beg == master_filenum && master_offset == slave_offset_beg) {
+				if slave_filenum_beg == master_filenum && master_offset == slave_offset_beg {
 					can_promote = true
 					break
 				}
 			}
 		}
-		
-		if (!can_promote) {
+
+		if !can_promote {
 			return errors.New("Master and Slave offset cannot be same within the time limit!")
 		}
 	}
@@ -432,7 +432,7 @@ func (s *Topom) GroupPromoteServer(gid int, addr string, force bool) error {
 		}
 
 		var master = slice[0].Addr
-		if c, err := redis.NewClient(master, s.config.ProductAuth, 100 * time.Millisecond); err != nil {
+		if c, err := redis.NewClient(master, s.config.ProductAuth, 100*time.Millisecond); err != nil {
 			log.WarnErrorf(err, "create redis client to %s failed", master)
 		} else {
 			defer c.Close()
@@ -741,7 +741,7 @@ func (s *Topom) ExpansionExecDataSync(plan *expansionPlan) error {
 	//修改数据同步的状态
 	//plan.Action = 1
 	//plan.Step = 1
-	updatePlanError(plan, "-");
+	updatePlanError(plan, "-")
 	updatePlanMajorStep(plan, ExpansionActionDataSync)
 	updatePlanMinorStep(plan, ExpansionStepRunning)
 
@@ -751,17 +751,17 @@ func (s *Topom) ExpansionExecDataSync(plan *expansionPlan) error {
 		log.WarnErrorf(err, "get group-[%s] info failed", plan.DstGid)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, "get group-[" + strconv.Itoa(plan.DstGid) + "] info failed!");
+		updatePlanError(plan, "get group-["+strconv.Itoa(plan.DstGid)+"] info failed!")
 		return err
 	}
 
 	for _, server := range g.Servers {
-		c, err := redis.NewClient(server.Addr, s.config.ProductAuth, time.Second * 5)
+		c, err := redis.NewClient(server.Addr, s.config.ProductAuth, time.Second*5)
 		if err != nil {
 			log.WarnErrorf(err, "creat [%s] client failed", server.Addr)
 			//plan.Step = 0
 			updatePlanMinorStep(plan, ExpansionStepNothing)
-			updatePlanError(plan, "creat " + server.Addr + " client failed, Server may be down!");
+			updatePlanError(plan, "creat "+server.Addr+" client failed, Server may be down!")
 			return err
 		}
 
@@ -769,31 +769,31 @@ func (s *Topom) ExpansionExecDataSync(plan *expansionPlan) error {
 			log.WarnErrorf(err, "%s: slaveof no one failed ", server.Addr)
 			//plan.Step = 0
 			updatePlanMinorStep(plan, ExpansionStepNothing)
-			updatePlanError(plan, server.Addr + ": slaveof no one failed!");
+			updatePlanError(plan, server.Addr+": slaveof no one failed!")
 			return err
 		}
 		c.Close()
 	}
 
 	srcAddr := ctx.getGroupMaster(plan.SrcGid)
-	srcClient, err := redis.NewClient(srcAddr, s.config.ProductAuth, time.Second * 5)
+	srcClient, err := redis.NewClient(srcAddr, s.config.ProductAuth, time.Second*5)
 	if err != nil {
 		log.WarnErrorf(err, "creat [%s] client failed", srcAddr)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, "creat " + srcAddr + " client failed, Server may be down!");
-		return errors.New("Client connection failed, Server may be down!")	
+		updatePlanError(plan, "creat "+srcAddr+" client failed, Server may be down!")
+		return errors.New("Client connection failed, Server may be down!")
 	}
 	defer srcClient.Close()
 
 	dstAddr := ctx.getGroupMaster(plan.DstGid)
-	dstClient, err := redis.NewClient(dstAddr, s.config.ProductAuth, time.Second * 5)
+	dstClient, err := redis.NewClient(dstAddr, s.config.ProductAuth, time.Second*5)
 	if err != nil {
 		log.WarnErrorf(err, "creat [%s] client failed", dstAddr)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, "creat " + dstAddr + " client failed, Server may be down!");
-		return errors.New("Client connection failed, Server may be down!")	
+		updatePlanError(plan, "creat "+dstAddr+" client failed, Server may be down!")
+		return errors.New("Client connection failed, Server may be down!")
 	}
 	defer dstClient.Close()
 
@@ -803,7 +803,7 @@ func (s *Topom) ExpansionExecDataSync(plan *expansionPlan) error {
 		log.WarnErrorf(err, "set [%s] slotmigrate no failed", srcAddr)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, srcAddr + ": config set slotmigrate no failed");
+		updatePlanError(plan, srcAddr+": config set slotmigrate no failed")
 		return errors.New("Setting slotmigrate mode failed!")
 	}
 	plan.Status = "[" + dstAddr + "] config set slotmigrate no"
@@ -811,7 +811,7 @@ func (s *Topom) ExpansionExecDataSync(plan *expansionPlan) error {
 		log.WarnErrorf(err, "set [%s] slotmigrate no failed", srcAddr)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, dstAddr + ": config set slotmigrate no failed");
+		updatePlanError(plan, dstAddr+": config set slotmigrate no failed")
 		return errors.New("Setting slotmigrate mode failed!")
 	}
 
@@ -825,11 +825,11 @@ func (s *Topom) ExpansionExecDataSync(plan *expansionPlan) error {
 		log.WarnErrorf(err, "[%s] del slots key failed", srcAddr)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, srcAddr + ": del slots key failed");
+		updatePlanError(plan, srcAddr+": del slots key failed")
 		return errors.New("")
 	}
 
-	// config set db-sync-speed 70 and slaveof 
+	// config set db-sync-speed 70 and slaveof
 	syncSpeed := strconv.Itoa(plan.SyncSpeed)
 	binlogNums := strconv.Itoa(plan.BinlogNums)
 
@@ -838,7 +838,7 @@ func (s *Topom) ExpansionExecDataSync(plan *expansionPlan) error {
 		log.WarnErrorf(err, "set [%s] db-sync-speed %s failed", srcAddr, syncSpeed)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, srcAddr + ": config set db-sync-speed " + syncSpeed + " failed");
+		updatePlanError(plan, srcAddr+": config set db-sync-speed "+syncSpeed+" failed")
 		return errors.New("Setting db-sync-speed failed!")
 	}
 
@@ -847,7 +847,7 @@ func (s *Topom) ExpansionExecDataSync(plan *expansionPlan) error {
 		log.WarnErrorf(err, "set [%s] db-sync-speed %s failed", dstAddr, syncSpeed)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, dstAddr + ": config set db-sync-speed " + syncSpeed + " failed");
+		updatePlanError(plan, dstAddr+": config set db-sync-speed "+syncSpeed+" failed")
 		return errors.New("Setting db-sync-speed failed!")
 	}
 
@@ -857,7 +857,7 @@ func (s *Topom) ExpansionExecDataSync(plan *expansionPlan) error {
 		log.WarnErrorf(err, "set [%s] expire-logs-nums %s failed", srcAddr, binlogNums)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, srcAddr + ": config set expire-logs-nums " + binlogNums + " failed");
+		updatePlanError(plan, srcAddr+": config set expire-logs-nums "+binlogNums+" failed")
 		return errors.New("Setting expire-logs-nums " + binlogNums + " failed!")
 	}
 
@@ -866,16 +866,16 @@ func (s *Topom) ExpansionExecDataSync(plan *expansionPlan) error {
 		log.WarnErrorf(err, "set master-[%s] expire-logs-nums %s failed", dstAddr, binlogNums)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, srcAddr + ": config set expire-logs-nums " + syncSpeed + " failed");
+		updatePlanError(plan, srcAddr+": config set expire-logs-nums "+syncSpeed+" failed")
 		return errors.New("Setting expire-logs-nums " + syncSpeed + " failed!")
 	}
 
 	masterAddr := strings.Split(srcAddr, ":")
 	if len(masterAddr) < 2 {
-		log.Warnf("invalid src_addr: %s!",srcAddr)
+		log.Warnf("invalid src_addr: %s!", srcAddr)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, "invalid src_addr: " + srcAddr);
+		updatePlanError(plan, "invalid src_addr: "+srcAddr)
 		return errors.New("invalid src_addr!")
 	}
 	plan.Status = "[" + dstAddr + "] slaveof " + masterAddr[0] + " " + masterAddr[1] + " 0 0"
@@ -883,7 +883,7 @@ func (s *Topom) ExpansionExecDataSync(plan *expansionPlan) error {
 		log.WarnErrorf(err, "[%s] slaveof [%s] [%s] failed", dstAddr, masterAddr[0], masterAddr[1])
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, dstAddr + ": slaveof " + masterAddr[0]+ " " + masterAddr[1] + " failed");
+		updatePlanError(plan, dstAddr+": slaveof "+masterAddr[0]+" "+masterAddr[1]+" failed")
 		return errors.New("Slaveof failed!")
 	}
 
@@ -933,7 +933,7 @@ func (s *Topom) ExpansionExecBackup(plan *expansionPlan, force bool) error {
 		log.WarnErrorf(err, "ZK: get group-[%d] info faild!", plan.DstGid)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, "ZK: get group-[" + strconv.Itoa(plan.DstGid) + "] info faild!")
+		updatePlanError(plan, "ZK: get group-["+strconv.Itoa(plan.DstGid)+"] info faild!")
 		return err
 	}
 
@@ -941,30 +941,30 @@ func (s *Topom) ExpansionExecBackup(plan *expansionPlan, force bool) error {
 		log.WarnErrorf(err, "group-[%d] have no slave", plan.DstGid)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, "have no slave in group-[" + strconv.Itoa(plan.DstGid) + "]")
+		updatePlanError(plan, "have no slave in group-["+strconv.Itoa(plan.DstGid)+"]")
 		return nil
 	}
 
 	masterAddr := ctx.getGroupMaster(plan.DstGid)
 
-	for i:=1; i<len(g.Servers); i++ {
+	for i := 1; i < len(g.Servers); i++ {
 		slaveAddr := g.Servers[i].Addr
-		c, err := redis.NewClient(slaveAddr, s.config.ProductAuth, time.Second * 5)
+		c, err := redis.NewClient(slaveAddr, s.config.ProductAuth, time.Second*5)
 		if err != nil {
 			log.WarnErrorf(err, "creat [%s] client failed", slaveAddr)
 			//plan.Step = 0
 			updatePlanMinorStep(plan, ExpansionStepNothing)
-			updatePlanError(plan, "creat " + slaveAddr + " client failed, Server may be down!");
-			return errors.New("Client connection failed, Server may be down!")	
+			updatePlanError(plan, "creat "+slaveAddr+" client failed, Server may be down!")
+			return errors.New("Client connection failed, Server may be down!")
 		}
 		defer c.Close()
 
 		masterIpPort := strings.Split(masterAddr, ":")
 		if len(masterIpPort) < 2 {
-			log.Warnf("invalid master addr: %s!",masterAddr)
+			log.Warnf("invalid master addr: %s!", masterAddr)
 			//plan.Step = 0
 			updatePlanMinorStep(plan, ExpansionStepNothing)
-			updatePlanError(plan, "invalid master addr: " + masterAddr);
+			updatePlanError(plan, "invalid master addr: "+masterAddr)
 			return errors.New("invalid master addr!")
 		}
 		plan.Status = "[" + slaveAddr + "] slaveof " + masterIpPort[0] + " " + masterIpPort[1] + " 0 0"
@@ -972,7 +972,7 @@ func (s *Topom) ExpansionExecBackup(plan *expansionPlan, force bool) error {
 			log.WarnErrorf(err, "[%s] slaveof [%s] [%s] 0 0 failed", slaveAddr, masterIpPort[0], masterIpPort[1])
 			//plan.Step = 0
 			updatePlanMinorStep(plan, ExpansionStepNothing)
-			updatePlanError(plan, slaveAddr + ": slaveof " + masterIpPort[0]+ " " + masterIpPort[1] + " 0 0 failed");
+			updatePlanError(plan, slaveAddr+": slaveof "+masterIpPort[0]+" "+masterIpPort[1]+" 0 0 failed")
 			return errors.New("Slaveof failed!")
 		}
 	}
@@ -1001,29 +1001,29 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 
 	//plan.Action = 3
 	//plan.Step = 1
-	updatePlanError(plan, "-");
+	updatePlanError(plan, "-")
 	updatePlanMajorStep(plan, ExpansionActionSlotsMgrt)
 	updatePlanMinorStep(plan, ExpansionStepRunning)
-	
+
 	srcAddr := ctx.getGroupMaster(plan.SrcGid)
-	srcClient, err := redis.NewClient(srcAddr, s.config.ProductAuth, time.Second * 5)
+	srcClient, err := redis.NewClient(srcAddr, s.config.ProductAuth, time.Second*5)
 	if err != nil {
 		log.WarnErrorf(err, "creat [%s] client failed", srcAddr)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, "creat " + srcAddr + " client failed");
-		return errors.New("Client connection failed, Server may be down!")	
+		updatePlanError(plan, "creat "+srcAddr+" client failed")
+		return errors.New("Client connection failed, Server may be down!")
 	}
 	defer srcClient.Close()
 
 	dstAddr := ctx.getGroupMaster(plan.DstGid)
-	dstClient, err := redis.NewClient(dstAddr, s.config.ProductAuth, time.Second * 5)
+	dstClient, err := redis.NewClient(dstAddr, s.config.ProductAuth, time.Second*5)
 	if err != nil {
 		log.WarnErrorf(err, "creat [%s] client failed", dstAddr)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, "creat " + dstAddr + " client failed");
-		return errors.New("Client connection failed, Server may be down!")	
+		updatePlanError(plan, "creat "+dstAddr+" client failed")
+		return errors.New("Client connection failed, Server may be down!")
 	}
 	defer dstClient.Close()
 
@@ -1036,10 +1036,10 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 
 	masterIpPort := strings.Split(srcAddr, ":")
 	if len(masterIpPort) < 2 {
-		log.Warnf("invalid src_addr: %s!",srcAddr)
+		log.Warnf("invalid src_addr: %s!", srcAddr)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, "invalid src_addr: " + srcAddr);
+		updatePlanError(plan, "invalid src_addr: "+srcAddr)
 		return errors.New("invalid src_addr!")
 	}
 	plan.Status = "[" + dstAddr + "] slaveof " + masterIpPort[0] + " " + masterIpPort[1]
@@ -1047,7 +1047,7 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 		log.WarnErrorf(err, "[%s] slaveof [%s] [%s] failed", dstAddr, masterIpPort[0], masterIpPort[1])
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, dstAddr + ": slaveof " + masterIpPort[0]+ " " + masterIpPort[1] + " failed");
+		updatePlanError(plan, dstAddr+": slaveof "+masterIpPort[0]+" "+masterIpPort[1]+" failed")
 		return errors.New("Slaveof failed!")
 	}
 
@@ -1065,7 +1065,7 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 		log.WarnErrorf(err, "set [%s] slave-read-only yes failed", srcAddr)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, srcAddr + ": config set  slave-read-only yes failed");
+		updatePlanError(plan, srcAddr+": config set  slave-read-only yes failed")
 		return errors.New("Setting slave-read-only mode failed!")
 	}
 	plan.Status = "[" + srcAddr + "] config set slotmigrate yes"
@@ -1073,20 +1073,20 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 		log.WarnErrorf(err, "set [%s] slotmigrate yes failed", srcAddr)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, srcAddr + ": config set slotmigrate yes failed");
+		updatePlanError(plan, srcAddr+": config set slotmigrate yes failed")
 		return errors.New("Setting slotmigrate mode failed!")
 	}
 
 	//master 与 slave 偏移量是否一致
 	plan.Status = "wait binlog_offset same"
 	binlogSame := false
-	for i:=0; i<50; i++ {
+	for i := 0; i < 50; i++ {
 		masterFilenum, masterOffset, err := srcClient.BinlogOffset()
 		if err != nil {
 			log.WarnErrorf(err, "get [%s] binlog offset failed", srcAddr)
 			//plan.Step = 0
 			updatePlanMinorStep(plan, ExpansionStepNothing)
-			updatePlanError(plan, srcAddr + ": get  binlog offset failed");
+			updatePlanError(plan, srcAddr+": get  binlog offset failed")
 			return errors.New("Failed to get binlog offset!")
 		}
 		slaveFilenum, slaveOffset, err := dstClient.BinlogOffset()
@@ -1094,7 +1094,7 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 			log.WarnErrorf(err, "get [%s] binlog offset failed", dstAddr)
 			//plan.Step = 0
 			updatePlanMinorStep(plan, ExpansionStepNothing)
-			updatePlanError(plan, dstAddr + ": get  binlog offset failed");
+			updatePlanError(plan, dstAddr+": get  binlog offset failed")
 			return errors.New("Failed to get binlog offset!")
 		}
 
@@ -1105,9 +1105,9 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 			return errors.New("too much difference of binlog offset!")
 		}*/
 
-		if (masterFilenum == slaveFilenum && masterOffset == slaveOffset) {
+		if masterFilenum == slaveFilenum && masterOffset == slaveOffset {
 			binlogSame = true
-			break;
+			break
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -1116,7 +1116,7 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 		log.WarnErrorf(err, "timeout: binlog offset not same in 5s!")
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, "timeout: binlog offset not same in 5s!");
+		updatePlanError(plan, "timeout: binlog offset not same in 5s!")
 		return errors.New("timeout: binlog offset not same in 5s!")
 	}
 
@@ -1126,7 +1126,7 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 		log.WarnErrorf(err, "[%s] slaveof no one failed", dstAddr)
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, dstAddr + ": slaveof no one failed");
+		updatePlanError(plan, dstAddr+": slaveof no one failed")
 		return errors.New("Slaveof no one failed!")
 	}
 
@@ -1137,7 +1137,7 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 		log.WarnErrorf(err, "create slots mgrt action failed")
 		//plan.Step = 0
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, "create slots mgrt action failed");
+		updatePlanError(plan, "create slots mgrt action failed")
 		return err
 	}
 	noSlotsAction = false
@@ -1147,7 +1147,7 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 	go func(plan *expansionPlan, addr string) {
 		//log.Warnf("end ExpansionMgrtSlots to recover")
 		timeout := true
-		for i:=0; i<30; i++ {
+		for i := 0; i < 30; i++ {
 			if s.isSlotsActionFinsh(plan.SlotsArr) {
 				timeout = false
 				break
@@ -1161,19 +1161,19 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 			//plan.Status = "SlotMgrt timeout"
 			//plan.Step = 0
 			updatePlanMinorStep(plan, ExpansionStepNothing)
-			updatePlanError(plan, "SlotMgrt timeout");
+			updatePlanError(plan, "SlotMgrt timeout")
 			log.Warnf("SlotMgrt timeout")
 		} else {
 			//plan.Status = "SlotsMgrt finshed"
 			updatePlanStatus(plan, "SlotsMgrt finshed")
 		}
 
-		c, err := redis.NewClient(addr, s.config.ProductAuth, time.Second * 5)
+		c, err := redis.NewClient(addr, s.config.ProductAuth, time.Second*5)
 		if err != nil {
 			log.WarnErrorf(err, "creat [%s] client failed", addr)
 			//plan.Step = 0
 			updatePlanMinorStep(plan, ExpansionStepNothing)
-			updatePlanError(plan, plan.Status + ": creat " + addr + " client failed");
+			updatePlanError(plan, plan.Status+": creat "+addr+" client failed")
 			return
 		}
 		defer c.Close()
@@ -1183,7 +1183,7 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 			log.WarnErrorf(err, "set [%s] slotmigrate no failed", addr)
 			//plan.Step = 0
 			updatePlanMinorStep(plan, ExpansionStepNothing)
-			updatePlanError(plan, plan.Status + ": [" + addr + "] config set slotmigrate no failed");
+			updatePlanError(plan, plan.Status+": ["+addr+"] config set slotmigrate no failed")
 			return
 		}
 		//plan.Status = "[" + addr + "] config set slave-read-only no"
@@ -1191,7 +1191,7 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 			log.WarnErrorf(err, "set [%s] slave-read-only no failed", addr)
 			//plan.Step = 0
 			updatePlanMinorStep(plan, ExpansionStepNothing)
-			updatePlanError(plan, plan.Status + ": [" + addr + "] config set slave-read-only no failed");
+			updatePlanError(plan, plan.Status+": ["+addr+"] config set slave-read-only no failed")
 			return
 		}
 	}(plan, srcAddr)
@@ -1201,31 +1201,31 @@ func (s *Topom) ExpansionExecSlotsMgrt(plan *expansionPlan) error {
 
 func (s *Topom) ExpansionExecDateClean(plan *expansionPlan) error {
 	if plan.MajorStep < ExpansionActionSlotsMgrt || (plan.MajorStep == ExpansionActionSlotsMgrt && plan.MinorStep < ExpansionStepFinshed) {
-		return errors.New("SlotsMgrt does not exec!") 
+		return errors.New("SlotsMgrt does not exec!")
 	}
 
 	if plan.MajorStep == ExpansionActionDataClean && plan.MinorStep > ExpansionStepCompact {
-		return errors.New("DateClean has finshed!") 
+		return errors.New("DateClean has finshed!")
 	}
 	updatePlanError(plan, "-")
 	if plan.MajorStep == ExpansionActionSlotsMgrt && plan.MinorStep == ExpansionStepFinshed {
-		updatePlanError(plan, "-");
+		updatePlanError(plan, "-")
 		updatePlanMajorStep(plan, ExpansionActionDataClean)
 		updatePlanMinorStep(plan, ExpansionStepSlotsreload)
 	}
-	
+
 	switch plan.MinorStep {
 
 	case ExpansionStepSlotsreload:
 		updatePlanStatus(plan, "start slotsreload")
 		if err := s.DateCleanSlotsreload(plan.SrcGid); err != nil {
 			log.WarnErrorf(err, "group-[%d] slotsreload failed", plan.SrcGid)
-			updatePlanError(plan, "group-[" + strconv.Itoa(plan.SrcGid) + "] slotsreload failed");
+			updatePlanError(plan, "group-["+strconv.Itoa(plan.SrcGid)+"] slotsreload failed")
 			return err
 		}
 		if err := s.DateCleanSlotsreload(plan.DstGid); err != nil {
 			log.WarnErrorf(err, "group-[%d] slotsreload failed", plan.DstGid)
-			updatePlanError(plan, "group-[" + strconv.Itoa(plan.DstGid) + "] slotsreload failed");
+			updatePlanError(plan, "group-["+strconv.Itoa(plan.DstGid)+"] slotsreload failed")
 			return err
 		}
 		updatePlanMinorStep(plan, ExpansionStepSlotsdel)
@@ -1234,50 +1234,50 @@ func (s *Topom) ExpansionExecDateClean(plan *expansionPlan) error {
 	case ExpansionStepSlotsdel:
 		if err := s.isSlotsreloadFinsh(plan); err != nil {
 			return err
-		} 
+		}
 		updatePlanStatus(plan, "start slotsdel")
 		if err := s.DateCleanSlotsdel(plan.SrcGid); err != nil {
 			log.WarnErrorf(err, "group-[%d] slotsdel failed", plan.SrcGid)
-			updatePlanError(plan, "group-[" + strconv.Itoa(plan.SrcGid) + "] slotsdel failed");
+			updatePlanError(plan, "group-["+strconv.Itoa(plan.SrcGid)+"] slotsdel failed")
 			return err
 		}
 		if err := s.DateCleanSlotsdel(plan.DstGid); err != nil {
 			log.WarnErrorf(err, "group-[%d] slotsdel failed", plan.DstGid)
-			updatePlanError(plan, "group-[" + strconv.Itoa(plan.DstGid) + "] slotsdel failed");
+			updatePlanError(plan, "group-["+strconv.Itoa(plan.DstGid)+"] slotsdel failed")
 			return err
 		}
 		updatePlanMinorStep(plan, ExpansionStepDelSlotsKey)
 		break
-	
+
 	case ExpansionStepDelSlotsKey:
 		if err := s.isSlotsDelFinsh(plan); err != nil {
 			return err
-		} 
+		}
 		updatePlanStatus(plan, "start Delslotskey")
 		if err := s.DateCleanDelSlotsKey(plan.SrcGid); err != nil {
 			log.WarnErrorf(err, "group-[%d] del slots key failed", plan.SrcGid)
-			updatePlanError(plan, "group-[" + strconv.Itoa(plan.SrcGid) + "] del slots key failed");
+			updatePlanError(plan, "group-["+strconv.Itoa(plan.SrcGid)+"] del slots key failed")
 			return err
 		}
 		if err := s.DateCleanDelSlotsKey(plan.DstGid); err != nil {
 			log.WarnErrorf(err, "group-[%d] del slots key failed", plan.DstGid)
-			updatePlanError(plan, "group-[" + strconv.Itoa(plan.DstGid) + "] del slots key failed");
+			updatePlanError(plan, "group-["+strconv.Itoa(plan.DstGid)+"] del slots key failed")
 			return err
 		}
 		updatePlanStatus(plan, "Delslotskey end")
 		updatePlanMinorStep(plan, ExpansionStepCompact)
 		break
-	
+
 	case ExpansionStepCompact:
 		updatePlanStatus(plan, "start Compact")
 		if err := s.DateCleanCompact(plan.SrcGid); err != nil {
 			log.WarnErrorf(err, "group-[%d] compact failed", plan.SrcGid)
-			updatePlanError(plan, "group-[" + strconv.Itoa(plan.SrcGid) + "] compact failed");
+			updatePlanError(plan, "group-["+strconv.Itoa(plan.SrcGid)+"] compact failed")
 			return err
 		}
 		if err := s.DateCleanCompact(plan.DstGid); err != nil {
 			log.WarnErrorf(err, "group-[%d] compact failed", plan.DstGid)
-			updatePlanError(plan, "group-[" + strconv.Itoa(plan.DstGid) + "] compact failed");
+			updatePlanError(plan, "group-["+strconv.Itoa(plan.DstGid)+"] compact failed")
 			return err
 		}
 		updatePlanMinorStep(plan, ExpansionDataCleanFinshed)
@@ -1290,13 +1290,13 @@ func (s *Topom) ExpansionExecDateClean(plan *expansionPlan) error {
 
 /*func (s *Topom) ExpansionExecDateClean(plan *expansionPlan) error {
 	if plan.MajorStep < ExpansionActionSlotsMgrt || (plan.MajorStep == ExpansionActionSlotsMgrt && plan.MinorStep == ExpansionStepNothing) {
-		return errors.New("SlotsMgrt does not exec!") 
+		return errors.New("SlotsMgrt does not exec!")
 	}
 
 	if plan.MajorStep == ExpansionActionDataClean && plan.MinorStep > ExpansionStepNothing {
-		return errors.New("DateClean has been exec!") 
+		return errors.New("DateClean has been exec!")
 	}
-	
+
 	//plan.Action = 4
 	//plan.Step = 1
 	updatePlanError(plan, "-");
@@ -1329,7 +1329,7 @@ func (s *Topom) isSlotsreloadFinsh(plan *expansionPlan) error {
 	err, ok := s.isSlotsreloadOff(plan.SrcGid)
 	if err != nil {
 		log.WarnErrorf(err, "group-[%d] wait slotsreload err", plan.SrcGid)
-		updatePlanError(plan, "group-[" + strconv.Itoa(plan.SrcGid) + "] wait slotsreload err");
+		updatePlanError(plan, "group-["+strconv.Itoa(plan.SrcGid)+"] wait slotsreload err")
 		return err
 	} else if !ok {
 		return errors.New("Slotsreload is running")
@@ -1338,7 +1338,7 @@ func (s *Topom) isSlotsreloadFinsh(plan *expansionPlan) error {
 	err, ok = s.isSlotsreloadOff(plan.DstGid)
 	if err != nil {
 		log.WarnErrorf(err, "group-[%d] wait slotsreload err", plan.DstGid)
-		updatePlanError(plan, "group-[" + strconv.Itoa(plan.DstGid) + "] wait slotsreload err");
+		updatePlanError(plan, "group-["+strconv.Itoa(plan.DstGid)+"] wait slotsreload err")
 		return err
 	}
 
@@ -1353,7 +1353,7 @@ func (s *Topom) isSlotsDelFinsh(plan *expansionPlan) error {
 	err, ok := s.isSlotsdelOff(plan.SrcGid)
 	if err != nil {
 		log.WarnErrorf(err, "group-[%d] wait slotsdel err", plan.SrcGid)
-		updatePlanError(plan, "group-[" + strconv.Itoa(plan.SrcGid) + "] wait slotsdel err");
+		updatePlanError(plan, "group-["+strconv.Itoa(plan.SrcGid)+"] wait slotsdel err")
 		return err
 	} else if !ok {
 		return errors.New("Slotsdel is running")
@@ -1362,7 +1362,7 @@ func (s *Topom) isSlotsDelFinsh(plan *expansionPlan) error {
 	err, ok = s.isSlotsdelOff(plan.DstGid)
 	if err != nil {
 		log.WarnErrorf(err, "group-[%d] wait slotsdel err", plan.DstGid)
-		updatePlanError(plan, "group-[" + strconv.Itoa(plan.DstGid) + "] wait slotsdel err");
+		updatePlanError(plan, "group-["+strconv.Itoa(plan.DstGid)+"] wait slotsdel err")
 		return err
 	}
 
@@ -1383,7 +1383,7 @@ func (s *Topom) ExpansionGroupDateClean(gid int) error {
 
 	//用来检测gid对应的master是否正常
 	addr := ctx.getGroupMaster(gid)
-	c, err := redis.NewClient(addr, s.config.ProductAuth, time.Second * 5)
+	c, err := redis.NewClient(addr, s.config.ProductAuth, time.Second*5)
 	if err != nil {
 		log.WarnErrorf(err, "creat [%s] client failed", addr)
 		return err
@@ -1395,27 +1395,27 @@ func (s *Topom) ExpansionGroupDateClean(gid int) error {
 	return nil
 }
 
-func (s *Topom) ExpansionDateCleanByGid (gid int, plan *expansionPlan) {
+func (s *Topom) ExpansionDateCleanByGid(gid int, plan *expansionPlan) {
 	// slotsreload
 	log.Warnf("slotsreload: gid: %d", gid)
-	updatePlanStatus(plan, "group-[" + strconv.Itoa(gid) + "] slotsreload")
+	updatePlanStatus(plan, "group-["+strconv.Itoa(gid)+"] slotsreload")
 	//plan.Status = "group-[" + strconv.Itoa(gid) + "] slotsreload"
 	if err := s.DateCleanSlotsreload(gid); err != nil {
 		log.WarnErrorf(err, "group-[%d] slotsreload failed", gid)
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, "group-[" + strconv.Itoa(gid) + "] slotsreload failed");
-		return 
+		updatePlanError(plan, "group-["+strconv.Itoa(gid)+"] slotsreload failed")
+		return
 	}
 
 	// 等待slotsreload结束
 	log.Warnf("wait slotsreload off : gid: %d", gid)
-	for ;; {
+	for {
 		time.Sleep(30 * time.Second)
 		err, ok := s.isSlotsreloadOff(gid)
 		if err != nil {
 			log.WarnErrorf(err, "group-[%d] wait slotsreload err", gid)
 			updatePlanMinorStep(plan, ExpansionStepNothing)
-			updatePlanError(plan, "group-[" + strconv.Itoa(gid) + "] wait slotsreload err");
+			updatePlanError(plan, "group-["+strconv.Itoa(gid)+"] wait slotsreload err")
 			return
 		} else if ok {
 			break
@@ -1423,20 +1423,19 @@ func (s *Topom) ExpansionDateCleanByGid (gid int, plan *expansionPlan) {
 	}
 
 	// slotsdel
-	updatePlanStatus(plan, "group-[" + strconv.Itoa(gid) + "] slotsdel")
+	updatePlanStatus(plan, "group-["+strconv.Itoa(gid)+"] slotsdel")
 	log.Warnf("DateClean-Slotsdel : gid: %d", gid)
 	s.DateCleanSlotsdel(gid)
-	
 
 	// 等待slotsdel执行结束：删除slots相关key
 	log.Warnf("wait slotsdel off : gid: %d", gid)
-	for ;; {
+	for {
 		time.Sleep(30 * time.Second)
 		err, ok := s.isSlotsdelOff(gid)
 		if err != nil {
 			log.WarnErrorf(err, "group-[%d] wait slotsdel err", gid)
 			updatePlanMinorStep(plan, ExpansionStepNothing)
-			updatePlanError(plan, "group-[" + strconv.Itoa(gid) + "] wait slotsdel err");
+			updatePlanError(plan, "group-["+strconv.Itoa(gid)+"] wait slotsdel err")
 			return
 		} else if ok {
 			break
@@ -1444,21 +1443,21 @@ func (s *Topom) ExpansionDateCleanByGid (gid int, plan *expansionPlan) {
 	}
 
 	log.Warnf("DateCleanDelSlotsKey : gid: %d", gid)
-	updatePlanStatus(plan, "group-[" + strconv.Itoa(gid) + "] del slots key")
+	updatePlanStatus(plan, "group-["+strconv.Itoa(gid)+"] del slots key")
 	if err := s.DateCleanDelSlotsKey(gid); err != nil {
 		log.WarnErrorf(err, "group-[%d] DateClean-DelSlotsKey failed", gid)
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, "group-[" + strconv.Itoa(gid) + "] DateClean-DelSlotsKey failed");
+		updatePlanError(plan, "group-["+strconv.Itoa(gid)+"] DateClean-DelSlotsKey failed")
 		return
 	}
 
 	//所有实例进行compact
 	log.Warnf("compact : gid: %d", gid)
-	updatePlanStatus(plan, "group-[" + strconv.Itoa(gid) + "] compact")
+	updatePlanStatus(plan, "group-["+strconv.Itoa(gid)+"] compact")
 	if err := s.DateCleanCompact(gid); err != nil {
 		log.WarnErrorf(err, "group-[%d] compact failed", gid)
 		updatePlanMinorStep(plan, ExpansionStepNothing)
-		updatePlanError(plan, "group-[" + strconv.Itoa(gid) + "] compact failed");
+		updatePlanError(plan, "group-["+strconv.Itoa(gid)+"] compact failed")
 		return
 	}
 
@@ -1471,7 +1470,7 @@ func (s *Topom) ExpansionDateCleanByGid (gid int, plan *expansionPlan) {
 	}
 }
 
-func (s *Topom) DateCleanSlotsreload (gid int) error {
+func (s *Topom) DateCleanSlotsreload(gid int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	ctx, err := s.newContext()
@@ -1480,7 +1479,7 @@ func (s *Topom) DateCleanSlotsreload (gid int) error {
 	}
 
 	addr := ctx.getGroupMaster(gid)
-	c, err := redis.NewClient(addr, s.config.ProductAuth, time.Second * 5)
+	c, err := redis.NewClient(addr, s.config.ProductAuth, time.Second*5)
 	if err != nil {
 		log.WarnErrorf(err, "creat [%s] client failed", addr)
 		return err
@@ -1494,7 +1493,7 @@ func (s *Topom) DateCleanSlotsreload (gid int) error {
 	return nil
 }
 
-func (s *Topom) DateCleanSlotsdel (gid int) error {
+func (s *Topom) DateCleanSlotsdel(gid int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	ctx, err := s.newContext()
@@ -1503,7 +1502,7 @@ func (s *Topom) DateCleanSlotsdel (gid int) error {
 	}
 
 	addr := ctx.getGroupMaster(gid)
-	c, err := redis.NewClient(addr, s.config.ProductAuth, time.Second * 5)
+	c, err := redis.NewClient(addr, s.config.ProductAuth, time.Second*5)
 	if err != nil {
 		log.WarnErrorf(err, "creat [%s] client failed", addr)
 		return err
@@ -1580,10 +1579,10 @@ func (s *Topom) DateCleanDelSlotsKey(gid int) error {
 	}
 
 	addr := ctx.getGroupMaster(gid)
-	c, err := redis.NewClient(addr, s.config.ProductAuth, time.Second * 5)
+	c, err := redis.NewClient(addr, s.config.ProductAuth, time.Second*5)
 	if err != nil {
 		log.WarnErrorf(err, "creat [%s] client failed", addr)
-		return err	
+		return err
 	}
 	defer c.Close()
 
@@ -1605,13 +1604,13 @@ func DelSlotsKey(c *redis.Client, pikaVersion string) error {
 
 	prefix := "_internal:slotkey:4migrate:"
 	if pikaVersion == "" {
-		prefix = "_internal:slotkey:4migrate:" 
+		prefix = "_internal:slotkey:4migrate:"
 	} else {
 		versionMajor, err := strconv.Atoi(pikaVersion[0:1])
 		if err != nil {
 			versionMajor = 0
 		}
-		
+
 		if pikaVersion != "" && pikaVersion != "3.5-2.2.6" && versionMajor >= 3 {
 			prefix = "_internal:4migrate:slotkey:"
 		} else {
@@ -1619,8 +1618,8 @@ func DelSlotsKey(c *redis.Client, pikaVersion string) error {
 		}
 	}
 
-	for i:=0; i<1024; i++ {
-		if err := c.Del(prefix+strconv.Itoa(i)); err != nil {
+	for i := 0; i < 1024; i++ {
+		if err := c.Del(prefix + strconv.Itoa(i)); err != nil {
 			return err
 		}
 	}
@@ -1640,7 +1639,7 @@ func (s *Topom) DateCleanCompact(gid int) error {
 	}
 
 	for _, server := range g.Servers {
-		c, err := redis.NewClient(server.Addr, s.config.ProductAuth, time.Second * 5)
+		c, err := redis.NewClient(server.Addr, s.config.ProductAuth, time.Second*5)
 		if err != nil {
 			log.WarnErrorf(err, "creat [%s] client failed", server.Addr)
 			return err
@@ -1671,7 +1670,7 @@ func (s *Topom) IsInvalidSrcGroup(gid int) error {
 	for _, m := range ctx.slots {
 		if m.Action.State != models.ActionNothing {
 			return errors.New("have migrate action")
-		} 
+		}
 	}
 	return nil
 }
@@ -1691,7 +1690,7 @@ func (s *Topom) IsInvalidDstGroup(gid int) error {
 	for _, m := range ctx.slots {
 		if m.GroupId == gid || m.Action.TargetId == gid {
 			return errors.New("dst_group have slots")
-		} 
+		}
 	}
 	return nil
 }
@@ -1744,12 +1743,12 @@ func (s *Topom) UpgrateStart(path string) error {
 
 	log.Warnf("restart codis-dashboard.")
 	exec.Command("rm", "./codis-dashboard").Run()
-	exec.Command("cp", path + "/codis-dashboard", "./").Run()
+	exec.Command("cp", path+"/codis-dashboard", "./").Run()
 	exec.Command("rm", "./dashboard.toml").Run()
-	exec.Command("cp", path + "/dashboard.toml", "./").Run()
-	
+	exec.Command("cp", path+"/dashboard.toml", "./").Run()
+
 	cmd := exec.Command("./codis-dashboard", "-c", "dashboard.toml", "-s", "restart")
 	cmd.Start()
-	
+
 	return nil
 }

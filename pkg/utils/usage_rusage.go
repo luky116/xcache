@@ -1,6 +1,7 @@
 // Copyright 2016 CodisLabs. All Rights Reserved.
 // Licensed under the MIT (MIT-LICENSE.txt) license.
 
+//go:build !linux
 // +build !linux
 
 package utils

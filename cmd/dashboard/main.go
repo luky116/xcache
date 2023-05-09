@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
-	"strings"
 
 	"github.com/docopt/docopt-go"
 
@@ -37,7 +37,7 @@ func killProcess(pidfile string) error {
 		return err
 	}
 
-	pid, err := strconv.Atoi( strings.TrimSpace(string(pd)) )
+	pid, err := strconv.Atoi(strings.TrimSpace(string(pd)))
 	if err := syscall.Kill(pid, 0); err == nil {
 		log.Warnf("fe[%d] is running, prepare to stop it.", pid)
 		//kill
@@ -50,10 +50,10 @@ func killProcess(pidfile string) error {
 					time.Sleep(100 * time.Millisecond)
 					count++
 					continue
-				} 
+				}
 				break
 			}
-			if err := syscall.Kill(pid, 0); err.Error() != ErrNoSuchProcess { 
+			if err := syscall.Kill(pid, 0); err.Error() != ErrNoSuchProcess {
 				log.Warnf("stop fe[%d] failed, error : %v.", pid, err)
 				return fmt.Errorf("stop fe[%d] failed, error : %v.", pid, err)
 			}
@@ -143,7 +143,7 @@ Options:
 		config.Ncpu = n
 		//runtime.GOMAXPROCS(n)
 	}
-	if (config.Ncpu >= 1) {
+	if config.Ncpu >= 1 {
 		runtime.GOMAXPROCS(config.Ncpu)
 	} else {
 		runtime.GOMAXPROCS(runtime.NumCPU())

@@ -85,7 +85,7 @@ master_mysql_database = ""
 
 type Config struct {
 	ConfigName string `toml:"-" json:"config_name"`
-	
+
 	CoordinatorName string `toml:"coordinator_name" json:"-"`
 	CoordinatorAddr string `toml:"coordinator_addr" json:"-"`
 	CoordinatorAuth string `toml:"coordinator_auth" json:"-"`
@@ -118,22 +118,22 @@ type Config struct {
 	SentinelNotificationScript   string            `toml:"sentinel_notification_script" json:"sentinel_notification_script"`
 	SentinelClientReconfigScript string            `toml:"sentinel_client_reconfig_script" json:"sentinel_client_reconfig_script"`
 
-	Ncpu           int     `toml:"ncpu"`
-	Log            string  `toml:"log"`
-	ExpireLogDays  int     `toml:"expire_log_days"`
-	LogLevel       string  `toml:"log_level"`
-	PidFile        string  `toml:"pidfile"`
+	Ncpu          int    `toml:"ncpu"`
+	Log           string `toml:"log"`
+	ExpireLogDays int    `toml:"expire_log_days"`
+	LogLevel      string `toml:"log_level"`
+	PidFile       string `toml:"pidfile"`
 
-	MysqlAddr 		string 	`toml:"mysql_addr" json:"mysql_addr"`
-	MysqlUsername 	string 	`toml:"mysql_username" json:"mysql_username"`
-	MysqlPassword 	string 	`toml:"mysql_password" json:"-"`
-	MysqlDatabase 	string 	`toml:"mysql_database" json:"mysql_database"`
+	MysqlAddr     string `toml:"mysql_addr" json:"mysql_addr"`
+	MysqlUsername string `toml:"mysql_username" json:"mysql_username"`
+	MysqlPassword string `toml:"mysql_password" json:"-"`
+	MysqlDatabase string `toml:"mysql_database" json:"mysql_database"`
 
-	MasterProduct 	string 	`toml:"master_product" json:"master_product"`
-	MasterMysqlAddr 		string 	`toml:"master_mysql_addr" json:"master_mysql_addr"`
-	MasterMysqlUsername 	string 	`toml:"master_mysql_username" json:"master_mysql_username"`
-	MasterMysqlPassword 	string 	`toml:"master_mysql_password" json:"-"`
-	MasterMysqlDatabase 	string 	`toml:"master_mysql_database" json:"master_mysql_database"`
+	MasterProduct       string `toml:"master_product" json:"master_product"`
+	MasterMysqlAddr     string `toml:"master_mysql_addr" json:"master_mysql_addr"`
+	MasterMysqlUsername string `toml:"master_mysql_username" json:"master_mysql_username"`
+	MasterMysqlPassword string `toml:"master_mysql_password" json:"-"`
+	MasterMysqlDatabase string `toml:"master_mysql_database" json:"master_mysql_database"`
 }
 
 func NewDefaultConfig() *Config {

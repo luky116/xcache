@@ -10,8 +10,9 @@ import (
    说明：从 Redis 2.6.12 版本开始， SET 命令可追加参数进行操作，因此 SET KEY VALUE 之后可能会追加参数，因此
    SET命令做特殊化处理
 */
-type CheckSET struct {}
-func (c *CheckSET) CheckRequest (r *Request, s *Session) bool{
+type CheckSET struct{}
+
+func (c *CheckSET) CheckRequest(r *Request, s *Session) bool {
 	if len(r.Multi) < 3 { //少于3个值，非正常set命令
 		return false
 	}
@@ -22,7 +23,7 @@ func (c *CheckSET) CheckRequest (r *Request, s *Session) bool{
 			record.AbnormalType = TYPE_BIG_REQUEST
 			record.Details.NumOfOperatedKeys = 1
 			record.Details.KeyInfoList = append(record.Details.KeyInfoList, KeyInfo{
-				Key: string(key),
+				Key:      string(key),
 				DataSize: int64(len(r.Multi[2].Value)),
 			})
 			collectRecord(record)
@@ -31,16 +32,17 @@ func (c *CheckSET) CheckRequest (r *Request, s *Session) bool{
 	}
 	return false
 }
-func (c *CheckSET) CheckResponse (r *Request, s *Session, delay int64) bool{
+func (c *CheckSET) CheckResponse(r *Request, s *Session, delay int64) bool {
 	return false
 }
 
 // CMD: MGET
-type CheckMGET struct {}
-func (c *CheckMGET) CheckRequest (r *Request, s *Session) bool{
+type CheckMGET struct{}
+
+func (c *CheckMGET) CheckRequest(r *Request, s *Session) bool {
 	return false
 }
-func (c *CheckMGET) CheckResponse (r *Request, s *Session, delay int64) bool{
+func (c *CheckMGET) CheckResponse(r *Request, s *Session, delay int64) bool {
 	if len(r.Multi) < 2 {
 		return true
 	}
@@ -58,7 +60,7 @@ func (c *CheckMGET) CheckResponse (r *Request, s *Session, delay int64) bool{
 			if int64(len(item.Value)) >= GetMaxValueLength() {
 				hasBigValue = true
 				bigkeys = append(bigkeys, KeyInfo{
-					Key: string(r.Multi[index+1].Value),
+					Key:      string(r.Multi[index+1].Value),
 					DataSize: int64(len(item.Value))})
 			}
 		}
@@ -75,7 +77,8 @@ func (c *CheckMGET) CheckResponse (r *Request, s *Session, delay int64) bool{
 }
 
 // CMD: HGET
-type CheckHGET struct {}
+type CheckHGET struct{}
+
 func (c *CheckHGET) CheckRequest(r *Request, s *Session) bool {
 	return false
 }
@@ -94,9 +97,9 @@ func (c *CheckHGET) CheckResponse(r *Request, s *Session, delay int64) bool {
 		record.AbnormalType = TYPE_BIG_KEY
 		record.Details.NumOfOperatedKeys = 1
 		record.Details.KeyInfoList = append(record.Details.KeyInfoList, KeyInfo{
-			Key: string(key),
+			Key:       string(key),
 			Batchsize: 1,
-			DataSize: int64(len(r.Resp.Value)),
+			DataSize:  int64(len(r.Resp.Value)),
 		})
 		record.DelayUs = delay
 		collectRecord(record)
@@ -105,7 +108,8 @@ func (c *CheckHGET) CheckResponse(r *Request, s *Session, delay int64) bool {
 }
 
 // CMD: SDIFF
-type CheckSDIFF struct {}
+type CheckSDIFF struct{}
+
 func (c *CheckSDIFF) CheckRequest(r *Request, s *Session) bool {
 	return false
 }
@@ -123,7 +127,7 @@ func (c *CheckSDIFF) CheckResponse(r *Request, s *Session, delay int64) bool {
 	if isBatchTooLarge {
 		var record = NewRecord(r, s.Conn.RemoteAddr())
 		//写入key：key,key2,...,keyN
-		for i:=1; i<len(r.Multi);i++ {
+		for i := 1; i < len(r.Multi); i++ {
 			if int64(len(record.Details.KeyInfoList)) >= GetMaxResultSetSize() {
 				break
 			}
@@ -131,7 +135,7 @@ func (c *CheckSDIFF) CheckResponse(r *Request, s *Session, delay int64) bool {
 				Key: string(r.Multi[i].Value)})
 		}
 		record.Details.ResponseBatchsize = int64(batchsize)
-		record.Details.NumOfOperatedKeys = int64(len(r.Multi)-1)
+		record.Details.NumOfOperatedKeys = int64(len(r.Multi) - 1)
 		record.AbnormalType = TYPE_BIG_RESPONSE
 		record.DelayUs = delay
 		collectRecord(record)
@@ -140,7 +144,7 @@ func (c *CheckSDIFF) CheckResponse(r *Request, s *Session, delay int64) bool {
 
 }
 
-//*scan Request
+// *scan Request
 func checkScanRequest(r *Request, s *Session) bool {
 	//只监控该模式：xSCAN cursor [MATCH pattern] [COUNT count]
 	if len(r.Multi) != 7 { //scan 不带数量则默认为10
@@ -156,7 +160,7 @@ func checkScanRequest(r *Request, s *Session) bool {
 		record.AbnormalType = TYPE_BIG_REQUEST
 		record.Details.NumOfOperatedKeys = 1
 		record.Details.KeyInfoList = append(record.Details.KeyInfoList, KeyInfo{
-			Key: string(key),
+			Key:       string(key),
 			Batchsize: int64(count),
 		})
 		collectRecord(record)
@@ -164,8 +168,10 @@ func checkScanRequest(r *Request, s *Session) bool {
 	}
 	return false
 }
-//CMD: HSCAN
-type CheckHSCAN struct {}
+
+// CMD: HSCAN
+type CheckHSCAN struct{}
+
 func (c *CheckHSCAN) CheckRequest(r *Request, s *Session) bool {
 	return checkScanRequest(r, s)
 }
@@ -183,17 +189,17 @@ func (c *CheckHSCAN) CheckResponse(r *Request, s *Session, delay int64) bool {
 			respArray := r.Resp.Array[1]
 			if respArray.IsArray() {
 				arrLength := len(respArray.Array)
-				if fieldNum = int64(arrLength/2); arrLength%2==0 {
+				if fieldNum = int64(arrLength / 2); arrLength%2 == 0 {
 					if fieldNum >= GetMaxBatchSize() {
 						tooMuchValues = true
 					}
 					var keyinfo = KeyInfo{
-						Key: string(key),
-						Batchsize: fieldNum,
+						Key:           string(key),
+						Batchsize:     fieldNum,
 						MaxMemberSize: 0,
-						DataSize: 0,
+						DataSize:      0,
 					}
-					for i:=0; i<arrLength/2; i++ {
+					for i := 0; i < arrLength/2; i++ {
 						valuesize := int64(len(respArray.Array[i*2+1].Value))
 						keyinfo.DataSize += valuesize
 						if keyinfo.MaxMemberSize <= valuesize {
@@ -221,8 +227,10 @@ func (c *CheckHSCAN) CheckResponse(r *Request, s *Session, delay int64) bool {
 	}
 	return true
 }
-//CMD: SSCAN
-type CheckSSCAN struct {}
+
+// CMD: SSCAN
+type CheckSSCAN struct{}
+
 func (c *CheckSSCAN) CheckRequest(r *Request, s *Session) bool {
 	return checkScanRequest(r, s)
 }
@@ -259,8 +267,10 @@ func (c *CheckSSCAN) CheckResponse(r *Request, s *Session, delay int64) bool {
 	}
 	return true
 }
-//CMD: ZSCAN
-type CheckZSCAN struct {}
+
+// CMD: ZSCAN
+type CheckZSCAN struct{}
+
 func (c *CheckZSCAN) CheckRequest(r *Request, s *Session) bool {
 	return checkScanRequest(r, s)
 }
@@ -278,7 +288,7 @@ func (c *CheckZSCAN) CheckResponse(r *Request, s *Session, delay int64) bool {
 			respArray := r.Resp.Array[1]
 			if respArray.IsArray() {
 				arrLength := len(respArray.Array)
-				if batchsize := arrLength/2; arrLength%2==0 {
+				if batchsize := arrLength / 2; arrLength%2 == 0 {
 					keyinfo.Batchsize = int64(batchsize)
 					if int64(batchsize) >= GetMaxBatchSize() {
 						tooMuchValues = true
@@ -298,7 +308,7 @@ func (c *CheckZSCAN) CheckResponse(r *Request, s *Session, delay int64) bool {
 	return true
 }
 
-//CMD: ZRANGE
+// CMD: ZRANGE
 func checkRangeRequest(r *Request, s *Session) bool {
 	if len(r.Multi) < 4 { //少于4个值，非正常set命令
 		return false
@@ -315,7 +325,7 @@ func checkRangeRequest(r *Request, s *Session) bool {
 	if start > end && end > 0 {
 		return false
 	}
-	interval := int64(end-start+1)
+	interval := int64(end - start + 1)
 	if interval >= GetMaxBatchSize() || end < 0 || interval < 0 {
 		// interval < 0 属于线上的特殊场景，stop取了int64的上限值，使得interval的值越界为负，此处特殊处理
 		var record = NewRecord(r, s.Conn.RemoteAddr())
@@ -337,7 +347,9 @@ func checkRangeRequest(r *Request, s *Session) bool {
 	}
 	return false
 }
-type CheckZRANGE struct {}
+
+type CheckZRANGE struct{}
+
 func (c *CheckZRANGE) CheckRequest(r *Request, s *Session) bool {
 	return checkRangeRequest(r, s)
 }
@@ -358,19 +370,19 @@ func (c *CheckZRANGE) CheckResponse(r *Request, s *Session, delay int64) bool {
 		batchsize := int64(len(r.Resp.Array))
 		keyinfo.Batchsize = batchsize
 		batchTooLarge = batchsize >= GetMaxBatchSize()
-	} else if len(r.Multi) == 5 {//带分数，withscores
+	} else if len(r.Multi) == 5 { //带分数，withscores
 		if keyword := strings.ToUpper(string(r.Multi[4].Value)); keyword != "WITHSCORES" {
 			return true
-		}//理论上withscores写错到不了这里，这里加上确保withscores拼写正确
+		} //理论上withscores写错到不了这里，这里加上确保withscores拼写正确
 		arrLength := len(r.Resp.Array)
-		if arrLength % 2 != 0 {
+		if arrLength%2 != 0 {
 			return true
 		}
-		batchsize := int64(arrLength/2)
+		batchsize := int64(arrLength / 2)
 		keyinfo.Batchsize = batchsize
 		batchTooLarge = batchsize >= GetMaxBatchSize()
 	}
-	if batchTooLarge{
+	if batchTooLarge {
 		var record = NewRecord(r, s.Conn.RemoteAddr())
 		record.AbnormalType = TYPE_BIG_KEY
 		record.Details.NumOfOperatedKeys = 1
@@ -381,8 +393,9 @@ func (c *CheckZRANGE) CheckResponse(r *Request, s *Session, delay int64) bool {
 	return true
 }
 
-//CMD: LRANGE
-type CheckLRANGE struct {}
+// CMD: LRANGE
+type CheckLRANGE struct{}
+
 func (c *CheckLRANGE) CheckRequest(r *Request, s *Session) bool {
 	return checkRangeRequest(r, s)
 }
@@ -390,8 +403,9 @@ func (c *CheckLRANGE) CheckResponse(r *Request, s *Session, delay int64) bool {
 	return false
 }
 
-//CMD: SINTER, SUNION
-type CheckSETCOMPARE struct {}
+// CMD: SINTER, SUNION
+type CheckSETCOMPARE struct{}
+
 func (c *CheckSETCOMPARE) CheckRequest(r *Request, s *Session) bool {
 	return false
 }
@@ -408,7 +422,7 @@ func (c *CheckSETCOMPARE) CheckResponse(r *Request, s *Session, delay int64) boo
 	if isBatchTooLarge {
 		var record = NewRecord(r, s.Conn.RemoteAddr())
 		//写入key：key,key2,...,keyN
-		for i:=1; i<len(r.Multi); i++ {
+		for i := 1; i < len(r.Multi); i++ {
 			if int64(len(record.Details.KeyInfoList)) >= GetMaxResultSetSize() {
 				break
 			}
@@ -425,7 +439,8 @@ func (c *CheckSETCOMPARE) CheckResponse(r *Request, s *Session, delay int64) boo
 }
 
 // CMD: SINTERSTORE, SUNIONSTORE
-type CheckSETCOMPAREANDSTORE struct {}
+type CheckSETCOMPAREANDSTORE struct{}
+
 func (c *CheckSETCOMPAREANDSTORE) CheckRequest(r *Request, s *Session) bool {
 	return false
 }
@@ -445,7 +460,7 @@ func (c *CheckSETCOMPAREANDSTORE) CheckResponse(r *Request, s *Session, delay in
 		var record = NewRecord(r, s.Conn.RemoteAddr())
 		record.AbnormalType = TYPE_BIG_RESPONSE
 		record.Details.ResponseBatchsize = int64(contentlength)
-		for i:=1; i<len(r.Multi);i++ {
+		for i := 1; i < len(r.Multi); i++ {
 			if int64(len(record.Details.KeyInfoList)) >= GetMaxResultSetSize() {
 				break
 			}
@@ -459,9 +474,9 @@ func (c *CheckSETCOMPAREANDSTORE) CheckResponse(r *Request, s *Session, delay in
 	return true
 }
 
-
 // CMD: SPOP
-type CheckSPOP struct {}
+type CheckSPOP struct{}
+
 func (c *CheckSPOP) CheckRequest(r *Request, s *Session) bool {
 	if len(r.Multi) < 3 { //小于3说明不带数量
 		return false
@@ -475,7 +490,7 @@ func (c *CheckSPOP) CheckRequest(r *Request, s *Session) bool {
 		key := getHashKey(r.Multi, r.OpStr)
 		record.Details.NumOfOperatedKeys = 1
 		record.Details.KeyInfoList = append(record.Details.KeyInfoList, KeyInfo{
-			Key: string(key),
+			Key:       string(key),
 			Batchsize: int64(numToPop),
 		})
 		record.AbnormalType = TYPE_BIG_REQUEST
@@ -489,7 +504,8 @@ func (c *CheckSPOP) CheckResponse(r *Request, s *Session, delay int64) bool {
 }
 
 // CMD: SRANDMEMBER
-type CheckSRANDMEMBER struct {}
+type CheckSRANDMEMBER struct{}
+
 func (c *CheckSRANDMEMBER) CheckRequest(r *Request, s *Session) bool {
 	if len(r.Multi) < 3 { //小于3说明不带数量
 		return false
@@ -506,7 +522,7 @@ func (c *CheckSRANDMEMBER) CheckRequest(r *Request, s *Session) bool {
 		key := getHashKey(r.Multi, r.OpStr)
 		record.Details.NumOfOperatedKeys = 1
 		record.Details.KeyInfoList = append(record.Details.KeyInfoList, KeyInfo{
-			Key: string(key),
+			Key:       string(key),
 			Batchsize: int64(numToReturn),
 		})
 		record.AbnormalType = TYPE_BIG_REQUEST
@@ -518,16 +534,3 @@ func (c *CheckSRANDMEMBER) CheckRequest(r *Request, s *Session) bool {
 func (c *CheckSRANDMEMBER) CheckResponse(r *Request, s *Session, delay int64) bool {
 	return false
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

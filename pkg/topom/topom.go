@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/CodisLabs/codis/pkg/models"
+	"github.com/CodisLabs/codis/pkg/proxy"
 	"github.com/CodisLabs/codis/pkg/utils"
 	"github.com/CodisLabs/codis/pkg/utils/errors"
 	"github.com/CodisLabs/codis/pkg/utils/log"
@@ -23,17 +24,16 @@ import (
 	"github.com/CodisLabs/codis/pkg/utils/redis"
 	"github.com/CodisLabs/codis/pkg/utils/rpc"
 	"github.com/CodisLabs/codis/pkg/utils/sync2/atomic2"
-	"github.com/CodisLabs/codis/pkg/proxy"
 )
 
 type Topom struct {
 	mu sync.Mutex
 
-	xauth string
-	model *models.Topom
-	store *models.Store
+	xauth      string
+	model      *models.Topom
+	store      *models.Store
 	slaveStore *models.Store
-	cache struct {
+	cache      struct {
 		hooks list.List
 		slots []*models.SlotMapping
 		group map[int]*models.Group
@@ -55,8 +55,8 @@ type Topom struct {
 	action struct {
 		redisp *redis.Pool
 
-		interval   atomic2.Int64
-		disabled   atomic2.Int64
+		interval atomic2.Int64
+		disabled atomic2.Int64
 
 		progress struct {
 			status atomic.Value
@@ -268,7 +268,7 @@ func (s *Topom) Start(routines bool) error {
 
 	// 定期刷新proxy的延时信息
 	go func() {
-		var loops int64 = 0 
+		var loops int64 = 0
 		for !s.IsClosed() {
 			if s.IsOnline() {
 				w, _ := s.RefreshProxyCmdStats(time.Second, loops)
@@ -286,7 +286,7 @@ func (s *Topom) Start(routines bool) error {
 
 	// 定时刷新redis的延时信息
 	go func() {
-		var loops int64 = 0 
+		var loops int64 = 0
 		for !s.IsClosed() {
 			if s.IsOnline() {
 				w, _ := s.RefreshRedisCmdStats(time.Second, loops)
@@ -413,7 +413,7 @@ type Stats struct {
 
 	SlotAction struct {
 		Interval int64 `json:"interval"`
-		Disabled int64  `json:"disabled"`
+		Disabled int64 `json:"disabled"`
 
 		Progress struct {
 			Status string `json:"status"`
@@ -546,18 +546,18 @@ func (s *Topom) SetConfig(key, value string) (string, error) {
 	var nextStep string
 	strings.ToLower(value)
 	strings.ToLower(key)
-	
+
 	switch key {
 	case "migration_method":
 		nextStep = "migrate"
-		if (value != "semi-async" && value != "sync") {
+		if value != "semi-async" && value != "sync" {
 			return "", errors.New("invalid value for migration_method")
 		}
 		s.config.MigrationMethod = value
 
 	case "migration_parallel_slots":
 		nextStep = "migrate"
-		ret,err := strconv.Atoi(value)
+		ret, err := strconv.Atoi(value)
 		if err != nil {
 			return nextStep, err
 		}
@@ -565,7 +565,7 @@ func (s *Topom) SetConfig(key, value string) (string, error) {
 
 	case "migration_async_maxbulks":
 		nextStep = "migrate"
-		ret,err := strconv.Atoi(value)
+		ret, err := strconv.Atoi(value)
 		if err != nil {
 			return nextStep, err
 		}
@@ -574,14 +574,14 @@ func (s *Topom) SetConfig(key, value string) (string, error) {
 	case "migration_async_maxbytes":
 		nextStep = "migrate"
 		p := &(s.config.MigrationAsyncMaxBytes)
-		err :=  p.UnmarshalText([]byte(value))
+		err := p.UnmarshalText([]byte(value))
 		if err != nil {
 			return nextStep, err
 		}
 
 	case "migration_async_numkeys":
 		nextStep = "migrate"
-		ret,err := strconv.Atoi(value)
+		ret, err := strconv.Atoi(value)
 		if err != nil {
 			return nextStep, err
 		}
@@ -590,7 +590,7 @@ func (s *Topom) SetConfig(key, value string) (string, error) {
 	case "migration_timeout":
 		nextStep = "migrate"
 		p := &(s.config.MigrationTimeout)
-		err :=  p.UnmarshalText([]byte(value))
+		err := p.UnmarshalText([]byte(value))
 		if err != nil {
 			return nextStep, err
 		}
@@ -598,14 +598,14 @@ func (s *Topom) SetConfig(key, value string) (string, error) {
 	case "sentinel_client_timeout":
 		nextStep = "sentinel"
 		p := &(s.config.SentinelClientTimeout)
-		err :=  p.UnmarshalText([]byte(value))
+		err := p.UnmarshalText([]byte(value))
 		if err != nil {
 			return nextStep, err
 		}
 
 	case "sentinel_quorum":
 		nextStep = "sentinel"
-		ret,err := strconv.Atoi(value)
+		ret, err := strconv.Atoi(value)
 		if err != nil {
 			return nextStep, err
 		}
@@ -613,7 +613,7 @@ func (s *Topom) SetConfig(key, value string) (string, error) {
 
 	case "sentinel_parallel_syncs":
 		nextStep = "sentinel"
-		ret,err := strconv.Atoi(value)
+		ret, err := strconv.Atoi(value)
 		if err != nil {
 			return nextStep, err
 		}
@@ -622,7 +622,7 @@ func (s *Topom) SetConfig(key, value string) (string, error) {
 	case "sentinel_down_after":
 		nextStep = "sentinel"
 		p := &(s.config.SentinelDownAfter)
-		err :=  p.UnmarshalText([]byte(value))
+		err := p.UnmarshalText([]byte(value))
 		if err != nil {
 			return nextStep, err
 		}
@@ -630,7 +630,7 @@ func (s *Topom) SetConfig(key, value string) (string, error) {
 	case "sentinel_failover_timeout":
 		nextStep = "sentinel"
 		p := &(s.config.SentinelFailoverTimeout)
-		err :=  p.UnmarshalText([]byte(value))
+		err := p.UnmarshalText([]byte(value))
 		if err != nil {
 			return nextStep, err
 		}
@@ -670,7 +670,6 @@ func NewZkToMysql(client models.Client, config *Config) (*Topom, error) {
 	s := &Topom{}
 	s.config = config
 
-	
 	s.store = models.NewStore(client, config.ProductName)
 
 	return s, nil

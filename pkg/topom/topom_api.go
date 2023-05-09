@@ -5,12 +5,12 @@ package topom
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
-	"os"
-	"io"
 
 	_ "net/http/pprof"
 
@@ -198,7 +198,7 @@ func (s *apiServer) QueryInfluxdb(params martini.Params) (int, string) {
 	//if response, err := s.topom.QueryInfluxdb(sql); err != nil || response.Error() != nil {
 	if response, err := s.topom.QueryInfluxdb(interval, sql); err != nil {
 		return rpc.ApiResponseError(err)
-	}else{
+	} else {
 		return rpc.ApiResponseJson(response)
 	}
 }
@@ -359,7 +359,7 @@ func (s *apiServer) CmdStatsAll(params martini.Params) (int, string) {
 	if err != nil {
 		return rpc.ApiResponseError(err)
 	}
-	
+
 	if stats, err := s.topom.CmdStatsAll(token); err != nil {
 		return rpc.ApiResponseError(err)
 	} else {
@@ -484,13 +484,13 @@ func (s *apiServer) GroupPromoteServer(params martini.Params) (int, string) {
 	if err != nil {
 		return rpc.ApiResponseError(err)
 	}
-	
+
 	force := 0
 	if params["force"] == "" {
 		force = 1
 	} else if force, err = s.parseInteger(params, "force"); err != nil {
 		return rpc.ApiResponseError(err)
-	} 
+	}
 
 	if err := s.topom.GroupPromoteServer(gid, addr, force != 0); err != nil {
 		return rpc.ApiResponseError(err)
@@ -669,7 +669,7 @@ func (s *apiServer) SetConfig(params martini.Params) (int, string) {
 		return rpc.ApiResponseError(errors.New("invalid key"))
 	}
 	value := params["value"]
-	
+
 	var nextStep string
 	var err error
 	if nextStep, err = s.topom.SetConfig(key, value); err != nil {
@@ -704,7 +704,7 @@ func (s *apiServer) ExecCmd(params martini.Params) (int, string) {
 	if addr == "" || cmd == "" {
 		return rpc.ApiResponseError(errors.New("invalid params"))
 	}
-	if (!cmdIsAllow(cmd)) {
+	if !cmdIsAllow(cmd) {
 		return rpc.ApiResponseError(errors.New("CMD: " + original_cmd + " is not allowed"))
 	}
 
@@ -721,28 +721,28 @@ func (s *apiServer) ExecCmd(params martini.Params) (int, string) {
 		} else {
 			return rpc.ApiResponseJson(text)
 		}
-	} else if (cmd == "SLOWLOG GET 1000" || cmd == "XSLOWLOG GET 1000") {
+	} else if cmd == "SLOWLOG GET 1000" || cmd == "XSLOWLOG GET 1000" {
 		if text, err := c.SlowLog(original_cmd); err != nil {
 			return rpc.ApiResponseError(err)
 		} else {
 			return rpc.ApiResponseJson(text)
 		}
-	} else if (cmd == "CONFIG GET *" || cmd == "XCONFIG GET *") {
-		var resp = "";
+	} else if cmd == "CONFIG GET *" || cmd == "XCONFIG GET *" {
+		var resp = ""
 		if strings, err := c.DoCmd_strings(original_cmd); err != nil {
 			return rpc.ApiResponseError(err)
 		} else {
 			if cmd == "CONFIG GET *" {
-				for i:=0; i<len(strings)-1; i++ {
-					if (strings[i] == "requirepass" || strings[i] == "masterauth" || strings[i] == "userpass") {
+				for i := 0; i < len(strings)-1; i++ {
+					if strings[i] == "requirepass" || strings[i] == "masterauth" || strings[i] == "userpass" {
 						strings[i+1] = "******"
 					}
 				}
 			}
-			for i:=0; i<len(strings); i++ {
-				if (i%2 == 0) {
+			for i := 0; i < len(strings); i++ {
+				if i%2 == 0 {
 					resp += strings[i] + ": "
-				} else  {
+				} else {
 					resp += strings[i] + "\r\n"
 				}
 			}
@@ -756,8 +756,8 @@ func (s *apiServer) ExecCmd(params martini.Params) (int, string) {
 func cmdIsAllow(cmd string) bool {
 	cmd = strings.ToUpper(cmd)
 	for _, val := range cmdWhiteList {
-		if (cmd == val || strings.Index(cmd, val) == 0) {
-			return true 
+		if cmd == val || strings.Index(cmd, val) == 0 {
+			return true
 		}
 	}
 	return false
@@ -767,7 +767,7 @@ func (s *apiServer) ExpansionPullPlan(params martini.Params) (int, string) {
 	if err := s.verifyXAuth(params); err != nil {
 		return rpc.ApiResponseError(err)
 	}
-	
+
 	resp := s.topom.ExpansionPullPlan()
 	return rpc.ApiResponseJson(resp)
 }
@@ -928,8 +928,8 @@ func DownLoadFile(r *http.Request, path, filename string) error {
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			err := os.Mkdir("./" + path, os.ModePerm)
-			if err != nil{
+			err := os.Mkdir("./"+path, os.ModePerm)
+			if err != nil {
 				return err
 			}
 		} else {
@@ -952,15 +952,15 @@ func DownLoadFile(r *http.Request, path, filename string) error {
 		}
 
 		log.Warnf("FileName=[%s], FormName=[%s]", part.FileName(), part.FormName())
-		if part.FileName() == "" {  // this is FormData
+		if part.FileName() == "" { // this is FormData
 			return errors.New("filename is invalid!")
-		} else {    // This is FileData
+		} else { // This is FileData
 			io.Copy(dst, part)
 		}
 	}
 
 	if filename == "codis-dashboard" {
-		os.Chmod("./" + path + "/" + filename, 0775)
+		os.Chmod("./"+path+"/"+filename, 0775)
 	}
 
 	return nil
@@ -1156,7 +1156,7 @@ func (s *apiServer) SetSlotActionDisabled(params martini.Params) (int, string) {
 	disabled, err := s.parseInteger(params, "value")
 	if err != nil {
 		return rpc.ApiResponseError(err)
-	} else if (disabled < 0 || disabled > 2) {
+	} else if disabled < 0 || disabled > 2 {
 		return rpc.ApiResponseError(errors.New("invalid value to ActionDisabled (0 <= disabled <= 2)"))
 	} else {
 		s.topom.SetSlotActionDisabled(disabled)

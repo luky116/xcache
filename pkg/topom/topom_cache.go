@@ -98,7 +98,7 @@ func (s *Topom) refillCacheSlots(slots []*models.SlotMapping) ([]*models.SlotMap
 				if err := s.storeUpdateSlotMapping(newSlots[i]); err != nil {
 					log.Warnf("reload slot-[%d] info to local failed", i)
 					return nil, err
-				}	
+				}
 			}
 		}
 		return newSlots, err

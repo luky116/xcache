@@ -67,12 +67,12 @@ func (bc *BackendConn) Close() {
 	bc.closed.Set(true)
 }
 
-//连接正常，与master连接正常，并且没有正在loading数据
+// 连接正常，与master连接正常，并且没有正在loading数据
 func (bc *BackendConn) IsConnected() bool {
 	return bc.state.Int64() == stateConnected
 }
 
-//判断连接是否断开，连接已经断开
+// 判断连接是否断开，连接已经断开
 func (bc *BackendConn) IsConnectDown() bool {
 	return bc.state.Int64() == 0
 }
@@ -244,10 +244,10 @@ func (bc *BackendConn) selectDatabase(c *redis.Conn, database int) error {
 	}
 }
 
-//r.Group slot中命令数量
-//r.Batch 批量命令数量
-//准备加入队列前执行，这里只是将slot命令计数器减一
-//此时还没有加入队列，不需要执行r.Batch.Done()
+// r.Group slot中命令数量
+// r.Batch 批量命令数量
+// 准备加入队列前执行，这里只是将slot命令计数器减一
+// 此时还没有加入队列，不需要执行r.Batch.Done()
 func SetResponse(r *Request, resp *redis.Resp, err error) error {
 	r.Resp, r.Err = resp, err
 	if r.Group != nil {
@@ -255,7 +255,7 @@ func SetResponse(r *Request, resp *redis.Resp, err error) error {
 	}
 	return err
 }
-func (bc *BackendConn) setResponse(r *Request, resp *redis.Resp, err error) error {	
+func (bc *BackendConn) setResponse(r *Request, resp *redis.Resp, err error) error {
 	r.Resp, r.Err = resp, err
 	if r.Group != nil {
 		r.Group.Done()
@@ -388,14 +388,14 @@ func (bc *BackendConn) loopWriter(round int) (err error) {
 	return nil
 }
 
-//sharedBackendConn表示一个后端server对应的一组后端连接，包括多个db，以及每个db中多个连接
+// sharedBackendConn表示一个后端server对应的一组后端连接，包括多个db，以及每个db中多个连接
 type sharedBackendConn struct {
 	addr string
 	host []byte
 	port []byte
 
-	owner *sharedBackendConnPool 	//sharedBackendConnPool中包括多个server对应的连接
-	conns [][]*BackendConn      //对应多个db，每个db又有多个连接
+	owner *sharedBackendConnPool //sharedBackendConnPool中包括多个server对应的连接
+	conns [][]*BackendConn       //对应多个db，每个db又有多个连接
 
 	//如果后端并行连接数只有一个，则每个db只有一个连接，这里数组指向不同的db中的唯一一个连接
 	single []*BackendConn
@@ -509,7 +509,7 @@ func (s *sharedBackendConn) BackendConn(database int32, seed uint, isQuick bool,
 				return bc
 			}
 		} else {
-			i = seed % uint(len(parallel) - quick) + uint(quick)
+			i = seed%uint(len(parallel)-quick) + uint(quick)
 			if bc := parallel[i]; bc.IsConnected() {
 				//log.Debugf("BackendConn: find slow bc[%d]", i)
 				return bc
@@ -517,7 +517,7 @@ func (s *sharedBackendConn) BackendConn(database int32, seed uint, isQuick bool,
 		}
 	} else {
 		for range parallel {
-			i = (i + 1) % uint(len(parallel)) 			//为什么i+1;为了for循环吗？
+			i = (i + 1) % uint(len(parallel)) //为什么i+1;为了for循环吗？
 			if bc := parallel[i]; bc.IsConnected() {
 				//log.Debugf("BackendConn: find all bc[%d]", i)
 				return bc
@@ -534,7 +534,7 @@ func (s *sharedBackendConn) BackendConn(database int32, seed uint, isQuick bool,
 type sharedBackendConnPool struct {
 	config   *Config
 	parallel int
-	quick	 int
+	quick    int
 
 	pool map[string]*sharedBackendConn
 }

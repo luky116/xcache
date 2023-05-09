@@ -12,18 +12,18 @@ type BreakerNameList struct {
 }
 
 var (
-	cmdWhiteListSwitch               atomic2.Int64
-	keyWhiteListSwitch               atomic2.Int64
-	cmdBlackListSwitch               atomic2.Int64
-	keyBlackListSwitch               atomic2.Int64
+	cmdWhiteListSwitch atomic2.Int64
+	keyWhiteListSwitch atomic2.Int64
+	cmdBlackListSwitch atomic2.Int64
+	keyBlackListSwitch atomic2.Int64
 
-	cmdBlackList = &BreakerNameList{}  //命令黑名单
-	cmdWhiteList = &BreakerNameList{}  //命令白名单
-	keyBlackList = &BreakerNameList{}  //key黑名单
-	keyWhiteList = &BreakerNameList{}  //key白名单
+	cmdBlackList = &BreakerNameList{} //命令黑名单
+	cmdWhiteList = &BreakerNameList{} //命令白名单
+	keyBlackList = &BreakerNameList{} //key黑名单
+	keyWhiteList = &BreakerNameList{} //key白名单
 )
 
-func (nl *BreakerNameList) clear()  {
+func (nl *BreakerNameList) clear() {
 	nl.namelist.Range(func(key, value interface{}) bool {
 		nl.namelist.Delete(key)
 		return true
@@ -42,7 +42,7 @@ func XconfigGetListAsRedisResp(src string) *redis.Resp {
 // 命令黑名单
 func StoreCmdBlackList(cmdName string) {
 	cmdName = strings.ToUpper(cmdName) //强制转换成大写的命令
-	cmdBlackList.namelist.Store(cmdName, struct {}{})
+	cmdBlackList.namelist.Store(cmdName, struct{}{})
 }
 func StoreCmdBlackListByBatch(cmdList string) {
 	// 由于xconfig命令给的是全量覆盖，所以每次修改均需对原map内容进行一次清空
@@ -68,7 +68,7 @@ func CheckCmdBlackList(cmdName string) bool {
 // 命令白名单
 func StoreCmdWhiteList(cmdName string) {
 	cmdName = strings.ToUpper(cmdName) //强制转换成大写的命令
-	cmdWhiteList.namelist.Store(cmdName, struct {}{})
+	cmdWhiteList.namelist.Store(cmdName, struct{}{})
 }
 func StoreCmdWhiteListByBatch(cmdList string) {
 	cmdWhiteList.clear()
@@ -92,7 +92,7 @@ func CheckCmdWhiteList(cmdName string) bool {
 
 // key黑名单
 func StoreKeyBlackList(key string) {
-	keyBlackList.namelist.Store(key, struct {}{})
+	keyBlackList.namelist.Store(key, struct{}{})
 }
 
 func StoreKeyBlackListByBatch(keyList string) {
@@ -132,7 +132,7 @@ func CheckKeyBlackList(key string) bool {
 
 // key白名单
 func StoreKeyWhiteList(key string) {
-	keyWhiteList.namelist.Store(key, struct {}{})
+	keyWhiteList.namelist.Store(key, struct{}{})
 }
 func StoreKeyWhiteListByBatch(keyList string) {
 	keyWhiteList.clear()
@@ -168,31 +168,3 @@ func CheckKeyWhiteList(key string) bool {
 	})
 	return res
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

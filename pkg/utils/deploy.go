@@ -1,32 +1,31 @@
 package utils
 
 import (
-	"fmt"
 	"bufio"
+	"fmt"
 	"io"
+	"io/ioutil"
+	"mime/multipart"
 	"os"
 	"os/exec"
-	"strings"
-	"strconv"
-	"mime/multipart"
-	"reflect"
-	"io/ioutil"
 	"path/filepath"
+	"reflect"
+	"strconv"
+	"strings"
 
-	"github.com/go-martini/martini"
+	"github.com/CodisLabs/codis/pkg/utils/bytesize"
 	"github.com/CodisLabs/codis/pkg/utils/errors"
 	"github.com/CodisLabs/codis/pkg/utils/log"
-	"github.com/CodisLabs/codis/pkg/utils/timesize"
-	"github.com/CodisLabs/codis/pkg/utils/bytesize"
 	"github.com/CodisLabs/codis/pkg/utils/rpc"
+	"github.com/CodisLabs/codis/pkg/utils/timesize"
+	"github.com/go-martini/martini"
 
 	"github.com/martini-contrib/render"
-
 )
 
-//.toml文件使用“=”分隔key和value，存在空行
-//pika.conf文件使用“:”分隔key和value，存在空行
-//redis.conf文件使用“ ”分隔key和value，存在空行
+// .toml文件使用“=”分隔key和value，存在空行
+// pika.conf文件使用“:”分隔key和value，存在空行
+// redis.conf文件使用“ ”分隔key和value，存在空行
 var dashboardSep = "="
 var proxySep = "="
 var pikaSep = ":"
@@ -44,106 +43,104 @@ var redisConfName = "redis.conf"
 //type DashBoardConf topom.Config
 
 type DashBoardConf struct {
-	CoordinatorAddr		string 			`form:"coordinator_addr" conf:"coordinator_addr"`
-	ProductName 		string 			`form:"product_name" conf:"product_name"`
-	ProductAuth 		string 			`form:"product_auth" conf:"product_auth"`
-	AdminAddr 			string 			`form:"admin_addr" conf:"admin_addr"`
-	InfluxdbServer 		string 			`form:"influxdb_server" conf:"metrics_report_influxdb_server"`
-	InfluxdbPeriod 		string 			`form:"influxdb_period" conf:"metrics_report_influxdb_period"`
-	InfluxdbUsername 	string 			`form:"influxdb_username" conf:"metrics_report_influxdb_username"`
-	InfluxdbPassword 	string 			`form:"influxdb_password" conf:"metrics_report_influxdb_password"`
-	InfluxdbDatabase 	string 			`form:"influxdb_database" conf:"metrics_report_influxdb_database"`
+	CoordinatorAddr  string `form:"coordinator_addr" conf:"coordinator_addr"`
+	ProductName      string `form:"product_name" conf:"product_name"`
+	ProductAuth      string `form:"product_auth" conf:"product_auth"`
+	AdminAddr        string `form:"admin_addr" conf:"admin_addr"`
+	InfluxdbServer   string `form:"influxdb_server" conf:"metrics_report_influxdb_server"`
+	InfluxdbPeriod   string `form:"influxdb_period" conf:"metrics_report_influxdb_period"`
+	InfluxdbUsername string `form:"influxdb_username" conf:"metrics_report_influxdb_username"`
+	InfluxdbPassword string `form:"influxdb_password" conf:"metrics_report_influxdb_password"`
+	InfluxdbDatabase string `form:"influxdb_database" conf:"metrics_report_influxdb_database"`
 
-	Ncpu 		int 					`form:"ncpu"`
-	LogLevel 	string 					`form:"logLevel"`
-	ConfFile 	*multipart.FileHeader 	`form:"confFile"`
+	Ncpu     int                   `form:"ncpu"`
+	LogLevel string                `form:"logLevel"`
+	ConfFile *multipart.FileHeader `form:"confFile"`
 }
 
 type ProxyConf struct {
-	ProductName 		string 			`form:"product_name" conf:"product_name"`
-	ProductAuth 		string 			`form:"product_auth" conf:"product_auth"`
-	AdminAddr 			string 			`form:"admin_addr" conf:"admin_addr"`
-	ProxyAddr 			string 			`form:"proxy_addr" conf:"proxy_addr"`
-	JodisAddr 			string 			`form:"jodis_addr" conf:"jodis_addr"`
-	MaxClients 			int 			`form:"max_clients" conf:"proxy_max_clients"`
-	BackendParallel 	int 			`form:"backend_parallel" conf:"backend_primary_parallel"`
-	BackendMaxPipeline 	int 			`form:"backend_max_pipeline" conf:"backend_max_pipeline"`
-	SessionMaxPipeline 	int 			`form:"session_max_pipeline" conf:"session_max_pipeline"`
+	ProductName        string `form:"product_name" conf:"product_name"`
+	ProductAuth        string `form:"product_auth" conf:"product_auth"`
+	AdminAddr          string `form:"admin_addr" conf:"admin_addr"`
+	ProxyAddr          string `form:"proxy_addr" conf:"proxy_addr"`
+	JodisAddr          string `form:"jodis_addr" conf:"jodis_addr"`
+	MaxClients         int    `form:"max_clients" conf:"proxy_max_clients"`
+	BackendParallel    int    `form:"backend_parallel" conf:"backend_primary_parallel"`
+	BackendMaxPipeline int    `form:"backend_max_pipeline" conf:"backend_max_pipeline"`
+	SessionMaxPipeline int    `form:"session_max_pipeline" conf:"session_max_pipeline"`
 
-	Ncpu 		int 					`form:"ncpu"`
-	LogLevel 	string 					`form:"logLevel"`
-	ConfFile 	*multipart.FileHeader 	`form:"confFile"`
+	Ncpu     int                   `form:"ncpu"`
+	LogLevel string                `form:"logLevel"`
+	ConfFile *multipart.FileHeader `form:"confFile"`
 }
 
 type PikaConf struct {
-	RemoteIP 			string 			`form:"remote_ip"`
-	Port 				int 			`form:"port" conf:"port"`
-	ThreadNum 			int  			`form:"thread_num" conf:"thread-num"`
-	Masterauth 			string 			`form:"masterauth" conf:"masterauth"`
-	Requirepass 		string 			`form:"requirepass" conf:"requirepass"`
-	Userpass 			string 			`form:"userpass" conf:"userpass"`
-	MaxClients 			int 			`form:"maxclients" conf:"maxclients"`
+	RemoteIP    string `form:"remote_ip"`
+	Port        int    `form:"port" conf:"port"`
+	ThreadNum   int    `form:"thread_num" conf:"thread-num"`
+	Masterauth  string `form:"masterauth" conf:"masterauth"`
+	Requirepass string `form:"requirepass" conf:"requirepass"`
+	Userpass    string `form:"userpass" conf:"userpass"`
+	MaxClients  int    `form:"maxclients" conf:"maxclients"`
 
 	//TargetFileSizeBase 	int 			`form:"target_file_size_base" conf:"target-file-size-base"`
 	//ExpireLogsDays 		int 			`form:"expire_logs_days" conf:"expire-logs-days"`
 	//ExpireLogsNums 		int 			`form:"expire_logs_nums" conf:"expire-logs-nums"`
 
-	ConfFile 	*multipart.FileHeader 	`form:"confFile"`
+	ConfFile *multipart.FileHeader `form:"confFile"`
 }
 
-
 type RedisConf struct {
-	RemoteIP 			string 			`form:"remote_ip"`
-	Port 				int 			`form:"port" conf:"port"`
-	Databases 			int 			`form:"databases" conf:"databases"`
-	Masterauth 			string 			`form:"masterauth" conf:"masterauth"`
-	Requirepass 		string 			`form:"requirepass" conf:"requirepass"`
-	MaxClients 			int 			`form:"maxclients" conf:"maxclients"`
-	MaxMemory 			string 			`form:"maxmemory" conf:"maxmemory"`
-	Appendonly 			string 			`form:"appendonly" conf:"appendonly"`
-	Appendfsync 		string 			`form:"appendfsync" conf:"appendfsync"`
+	RemoteIP    string `form:"remote_ip"`
+	Port        int    `form:"port" conf:"port"`
+	Databases   int    `form:"databases" conf:"databases"`
+	Masterauth  string `form:"masterauth" conf:"masterauth"`
+	Requirepass string `form:"requirepass" conf:"requirepass"`
+	MaxClients  int    `form:"maxclients" conf:"maxclients"`
+	MaxMemory   string `form:"maxmemory" conf:"maxmemory"`
+	Appendonly  string `form:"appendonly" conf:"appendonly"`
+	Appendfsync string `form:"appendfsync" conf:"appendfsync"`
 
-	ConfFile 	*multipart.FileHeader 	`form:"confFile"`
+	ConfFile *multipart.FileHeader `form:"confFile"`
 }
 
 type ServerFileConf struct {
-	Port 				int 			`form:"port" conf:"port"`
+	Port int `form:"port" conf:"port"`
 }
 
 type ProxyFileConf struct {
-	ProductName 		string 			`form:"product_name" conf:"product_name"`
-	ProxyAddr 			string 			`form:"proxy_addr" conf:"proxy_addr"`
-	AdminAddr 			string 			`form:"admin_addr" conf:"admin_addr"`
+	ProductName string `form:"product_name" conf:"product_name"`
+	ProxyAddr   string `form:"proxy_addr" conf:"proxy_addr"`
+	AdminAddr   string `form:"admin_addr" conf:"admin_addr"`
 }
 
 type DashBoardFileConf struct {
-	ProductName 		string 			`form:"product_name" conf:"product_name"`
-	AdminAddr 			string 			`form:"admin_addr" conf:"admin_addr"`
+	ProductName string `form:"product_name" conf:"product_name"`
+	AdminAddr   string `form:"admin_addr" conf:"admin_addr"`
 }
 
 type RemoteInfo struct {
-	RemoteIP 			string 			`form:"remote_ip"`
-	Port 				int 			`form:"port"`
+	RemoteIP string `form:"remote_ip"`
+	Port     int    `form:"port"`
 }
 
-const(
+const (
 	TypeConf = iota
 	TypeComment
 )
 
-type ConfItem struct{
-	confType	int  	// 0 means conf, 1 means comment
-	name		string	
-	value		string
+type ConfItem struct {
+	confType int // 0 means conf, 1 means comment
+	name     string
+	value    string
 }
 
-//items保存注释和配置项，confMap只保存配置项，共有相同的指针，修改confMap同时可以修改items
+// items保存注释和配置项，confMap只保存配置项，共有相同的指针，修改confMap同时可以修改items
 type DeployConfig struct {
-	items		[]*ConfItem
-	confMap  	map[string]*ConfItem
-	sep 		string 					//配置项中key、value分隔符
+	items   []*ConfItem
+	confMap map[string]*ConfItem
+	sep     string //配置项中key、value分隔符
 }
-
 
 func DeployInit(path string) {
 	binDir = filepath.Join(path, "bin")
@@ -155,16 +152,15 @@ func (c DeployConfig) Show() {
 	for index, item := range c.items {
 		if item.confType == TypeComment {
 			log.Infof("%d: %s\n", index, item.name)
-		}else{
-			if len(strings.TrimSpace(c.sep)) > 0 { 	//如果分隔符部署空格则在分隔符两边加空格
+		} else {
+			if len(strings.TrimSpace(c.sep)) > 0 { //如果分隔符部署空格则在分隔符两边加空格
 				log.Infof("%d: %s %s %s\n", index, item.name, c.sep, item.value)
-			}else{
+			} else {
 				log.Infof("%d: %s%s%s\n", index, item.name, c.sep, item.value)
 			}
 		}
 	}
 }
-
 
 func (c *DeployConfig) Init(path string, sep string) error {
 	c.confMap = make(map[string]*ConfItem)
@@ -234,7 +230,6 @@ func (c *DeployConfig) Set(key string, value string) error {
 
 	log.Infof("Set key : %s, value: %s\n", key, value)
 
-
 	if len(key) == 0 || len(value) == 0 {
 		return errors.New("key or value is null")
 	}
@@ -242,7 +237,7 @@ func (c *DeployConfig) Set(key string, value string) error {
 	item, found := c.confMap[key]
 	if found {
 		item.value = value
-	} else{
+	} else {
 		item := &ConfItem{}
 		item.confType = TypeConf
 		item.name = key
@@ -254,12 +249,12 @@ func (c *DeployConfig) Set(key string, value string) error {
 	return nil
 }
 
-//isWrap为1，表示value需要使用“”
+// isWrap为1，表示value需要使用“”
 func (c *DeployConfig) Reset(conf interface{}, isWrap bool) {
-	obj := reflect.ValueOf(conf)//.Elem() // the struct variable 指针时才用Elem()
+	obj := reflect.ValueOf(conf) //.Elem() // the struct variable 指针时才用Elem()
 	for i := 0; i < obj.NumField(); i++ {
-		fieldInfo := obj.Type().Field(i) // a reflect.StructField
-		name := fieldInfo.Tag.Get("toml")         // a reflect.StructTag
+		fieldInfo := obj.Type().Field(i)  // a reflect.StructField
+		name := fieldInfo.Tag.Get("toml") // a reflect.StructTag
 		if name == "" || name == "-" {
 			continue
 		}
@@ -267,56 +262,56 @@ func (c *DeployConfig) Reset(conf interface{}, isWrap bool) {
 		//fmt.Printf("name : %s(%s), value: %v\n", name, fieldInfo.Name, obj.Field(i).Interface())
 		var value string
 		switch v := obj.Field(i).Interface().(type) {
-			case string:
-				value = strings.Trim(strings.TrimSpace(v), "\"")
-				if value == "" {
-					continue
-				}
-
-				if isWrap {
-					c.Set(name, "\"" + value + "\"")
-				}else{
-					c.Set(name, value)
-				}
-
-			case int:
-				value = strconv.Itoa(v)
-				c.Set(name, value)
-
-			case int32:
-				value = strconv.FormatInt(int64(v),10)
-				c.Set(name, value)
-
-			case int64:
-				value = strconv.FormatInt(v,10)
-				c.Set(name, value)
-
-			case bool:
-				if (v) {
-					c.Set(name, "true")
-				} else {
-					c.Set(name, "false")
-				}
-
-			case timesize.Duration:
-				if ret, err := v.MarshalText(); err != nil{
-					log.WarnErrorf(err, "config set %s failed.\n", name)
-				} else {
-					value = string(ret[:])
-					c.Set(name, "\"" + value + "\"")
-				}
-
-			case bytesize.Int64: 
-				if ret, err := v.MarshalText(); err != nil{
-					log.WarnErrorf(err, "config set %s failed.\n", name)
-				} else {
-					value = string(ret[:])
-					c.Set(name, "\"" + value + "\"")
-				}
-				
-			default:
-				log.Warnf("value error: %v\n", v)
+		case string:
+			value = strings.Trim(strings.TrimSpace(v), "\"")
+			if value == "" {
 				continue
+			}
+
+			if isWrap {
+				c.Set(name, "\""+value+"\"")
+			} else {
+				c.Set(name, value)
+			}
+
+		case int:
+			value = strconv.Itoa(v)
+			c.Set(name, value)
+
+		case int32:
+			value = strconv.FormatInt(int64(v), 10)
+			c.Set(name, value)
+
+		case int64:
+			value = strconv.FormatInt(v, 10)
+			c.Set(name, value)
+
+		case bool:
+			if v {
+				c.Set(name, "true")
+			} else {
+				c.Set(name, "false")
+			}
+
+		case timesize.Duration:
+			if ret, err := v.MarshalText(); err != nil {
+				log.WarnErrorf(err, "config set %s failed.\n", name)
+			} else {
+				value = string(ret[:])
+				c.Set(name, "\""+value+"\"")
+			}
+
+		case bytesize.Int64:
+			if ret, err := v.MarshalText(); err != nil {
+				log.WarnErrorf(err, "config set %s failed.\n", name)
+			} else {
+				value = string(ret[:])
+				c.Set(name, "\""+value+"\"")
+			}
+
+		default:
+			log.Warnf("value error: %v\n", v)
+			continue
 		}
 	}
 }
@@ -335,10 +330,10 @@ func (c DeployConfig) ReWrite(confName string) error {
 		var lineStr string
 		if item.confType == TypeComment {
 			lineStr = fmt.Sprintf("%s", item.name)
-		}else {
+		} else {
 			if len(strings.TrimSpace(c.sep)) > 0 {
 				lineStr = fmt.Sprintf("%s %s %s", item.name, c.sep, item.value)
-			}else{
+			} else {
 				lineStr = fmt.Sprintf("%s%s%s", item.name, c.sep, item.value)
 			}
 		}
@@ -377,14 +372,14 @@ func genNewConfByConf(postConf interface{}, defaultConf string, newConf string, 
 		return err
 	}
 
-	var isWrap bool		//value值是否需要“”包围
+	var isWrap bool //value值是否需要“”包围
 	switch postConf.(type) {
-		case DashBoardConf, DashBoardFileConf:
-			isWrap = true
-		case ProxyConf, ProxyFileConf:
-			isWrap = true
-		default:
-			isWrap = false
+	case DashBoardConf, DashBoardFileConf:
+		isWrap = true
+	case ProxyConf, ProxyFileConf:
+		isWrap = true
+	default:
+		isWrap = false
 	}
 
 	conf.Reset(postConf, isWrap)
@@ -394,7 +389,7 @@ func genNewConfByConf(postConf interface{}, defaultConf string, newConf string, 
 
 func genNewConfByFile(postConfFile *multipart.FileHeader, newConf string) error {
 	confFile, err := postConfFile.Open()
-	if err != nil{
+	if err != nil {
 		log.WarnErrorf(err, "open postConf.ConfFile failed")
 		return err
 	}
@@ -402,8 +397,8 @@ func genNewConfByFile(postConfFile *multipart.FileHeader, newConf string) error 
 
 	//生成配置文件，os.Create如果文件存在则清空
 	f, err := os.Create(newConf)
-	if err != nil{
-		log.WarnErrorf(err,"create %s failed", newConf)
+	if err != nil {
+		log.WarnErrorf(err, "create %s failed", newConf)
 		return err
 	}
 	defer f.Close()
@@ -423,19 +418,19 @@ func doExecmd(cmd string) (bool, string) {
 			detail = strings.Split(string(out), "Fatal error:")[1]
 			detail = strings.Split(detail, "Aborting.")[0]
 			detail = strings.TrimSpace(detail)
-		} else{
+		} else {
 			detail = string(out)
 		}
 
 		result = false
 		log.Infof("Failed to do cmd[%s]\n", cmd)
-	}else{
+	} else {
 		if strings.Contains(string(out), "deploy_success") {
 			detail = "Success"
 			result = true
 
 			log.Infof("Success to do cmd[%s]\n", cmd)
-		}else{
+		} else {
 			detail = "Failed"
 			result = false
 
@@ -456,7 +451,7 @@ func CreateDashboard(postConf DashBoardConf) (int, string) {
 	logLevel := strings.TrimSpace(postConf.LogLevel)
 
 	host, port := parseAddr(addr)
-	if host == "" || ( port <= 0 || port >= 65535) {
+	if host == "" || (port <= 0 || port >= 65535) {
 		return rpc.ApiResponseError(errors.New("host or port is invalid"))
 	}
 
@@ -469,13 +464,13 @@ func CreateDashboard(postConf DashBoardConf) (int, string) {
 
 	//保存新配置文件
 	defaultConf := filepath.Join(binDir, dashboardConfName)
-	confName := "dashboard_" +  host + "_" + strconv.Itoa(port) + ".toml"
+	confName := "dashboard_" + host + "_" + strconv.Itoa(port) + ".toml"
 	newConf := filepath.Join(binDir, upLoadDir, confName)
 
 	var err error
-	if postConf.ConfFile == nil{
+	if postConf.ConfFile == nil {
 		err = genNewConfByConf(postConf, defaultConf, newConf, dashboardSep)
-	}else{
+	} else {
 		var fileConf DashBoardFileConf
 		err = genNewConfByFile(postConf.ConfFile, newConf)
 		fileConf.AdminAddr = postConf.AdminAddr
@@ -485,17 +480,17 @@ func CreateDashboard(postConf DashBoardConf) (int, string) {
 		}
 	}
 	if err != nil {
-		log.WarnErrorf(err,"create %s failed", newConf)
+		log.WarnErrorf(err, "create %s failed", newConf)
 		return rpc.ApiResponseError(err)
-	} 
+	}
 
 	log.Infof("create %s success.\n", newConf)
 
-	cmd := "fab -f " + fabfile + " -H " + host + " deploy_dashboard:port='" + strconv.Itoa(port) + 
-			"',ncpu='" + strconv.Itoa(ncpu) + "',log_level='" + logLevel + "',conf_name='" + confName + "'"
+	cmd := "fab -f " + fabfile + " -H " + host + " deploy_dashboard:port='" + strconv.Itoa(port) +
+		"',ncpu='" + strconv.Itoa(ncpu) + "',log_level='" + logLevel + "',conf_name='" + confName + "'"
 
 	ok, detail := doExecmd(cmd)
-	if ok  {
+	if ok {
 		log.Infof("Success to start dashboard[%s]\n", addr)
 	} else {
 		log.Warnf("Failed to start dashboard[%s]\n", addr)
@@ -505,10 +500,10 @@ func CreateDashboard(postConf DashBoardConf) (int, string) {
 
 	//删除配置文件,先留着以便查询，不占空间，写时可以覆盖
 	/*
-	err = os.Remove(newConf)
-	if err != nil {
-		log.WarnErrorf(err, "delete %s failed", newConf)
-	}*/
+		err = os.Remove(newConf)
+		if err != nil {
+			log.WarnErrorf(err, "delete %s failed", newConf)
+		}*/
 
 	return rpc.ApiResponseJson(detail)
 }
@@ -520,11 +515,11 @@ func CreateProxy(postConf ProxyConf) (int, string) {
 	logLevel := strings.TrimSpace(postConf.LogLevel)
 
 	adminHost, adminPort := parseAddr(adminAddr)
-	if adminHost == "" || ( adminPort <= 0 || adminPort >= 65535) {
+	if adminHost == "" || (adminPort <= 0 || adminPort >= 65535) {
 		return rpc.ApiResponseError(errors.New("adminHost or adminPort is invalid"))
 	}
 	proxyHost, proxyPort := parseAddr(proxyAddr)
-	if proxyHost == "" || ( proxyPort <= 0 || proxyPort >= 65535) {
+	if proxyHost == "" || (proxyPort <= 0 || proxyPort >= 65535) {
 		return rpc.ApiResponseError(errors.New("proxyHost or proxyPort is invalid"))
 	}
 	if adminHost != proxyHost {
@@ -543,13 +538,13 @@ func CreateProxy(postConf ProxyConf) (int, string) {
 
 	//保存新配置文件
 	defaultConf := filepath.Join(binDir, proxyConfName)
-	confName := "proxy_" +  adminHost + "_" + strconv.Itoa(adminPort) + ".toml"
+	confName := "proxy_" + adminHost + "_" + strconv.Itoa(adminPort) + ".toml"
 	newConf := filepath.Join(binDir, upLoadDir, confName)
 
 	var err error
-	if postConf.ConfFile == nil{
+	if postConf.ConfFile == nil {
 		err = genNewConfByConf(postConf, defaultConf, newConf, proxySep)
-	}else{
+	} else {
 		var fileConf ProxyFileConf
 		err = genNewConfByFile(postConf.ConfFile, newConf)
 		fileConf.AdminAddr = postConf.AdminAddr
@@ -560,16 +555,16 @@ func CreateProxy(postConf ProxyConf) (int, string) {
 		}
 	}
 	if err != nil {
-		log.WarnErrorf(err,"create %s failed", newConf)
+		log.WarnErrorf(err, "create %s failed", newConf)
 		return rpc.ApiResponseError(err)
 	}
 
 	log.Infof("create %s success.\n", newConf)
 
-	cmd := "fab -f " + fabfile + " -H " + adminHost + " deploy_proxy:port='" + strconv.Itoa(adminPort) + 
-			"',ncpu='" + strconv.Itoa(ncpu) + "',log_level='" + logLevel + "',conf_name='" + confName + "'"
+	cmd := "fab -f " + fabfile + " -H " + adminHost + " deploy_proxy:port='" + strconv.Itoa(adminPort) +
+		"',ncpu='" + strconv.Itoa(ncpu) + "',log_level='" + logLevel + "',conf_name='" + confName + "'"
 	ok, detail := doExecmd(cmd)
-	if ok  {
+	if ok {
 		log.Infof("Success to start proxy[%s]\n", adminAddr)
 	} else {
 		log.Warnf("Failed to start proxy[%s]\n", adminAddr)
@@ -579,10 +574,10 @@ func CreateProxy(postConf ProxyConf) (int, string) {
 
 	//删除配置文件,先留着以便查询，不占空间，写时可以覆盖
 	/*
-	err = os.Remove(newConf)
-	if err != nil {
-		log.WarnErrorf(err, "delete %s failed", newConf)
-	}*/
+		err = os.Remove(newConf)
+		if err != nil {
+			log.WarnErrorf(err, "delete %s failed", newConf)
+		}*/
 
 	return rpc.ApiResponseJson(detail)
 }
@@ -592,19 +587,19 @@ func CreatePika(postConf PikaConf) (int, string) {
 	port := postConf.Port
 
 	//判断配置项是否为空
-	if host == "" || ( port <= 0 || port >= 65535) {
+	if host == "" || (port <= 0 || port >= 65535) {
 		return rpc.ApiResponseError(errors.New("host or port is invalid"))
 	}
 
 	//保存新配置文件
 	defaultConf := filepath.Join(binDir, pikaConfName)
-	confName := "pika_" +  host + "_" + strconv.Itoa(port) + ".conf"
+	confName := "pika_" + host + "_" + strconv.Itoa(port) + ".conf"
 	newConf := filepath.Join(binDir, upLoadDir, confName)
 
 	var err error
-	if postConf.ConfFile == nil{
+	if postConf.ConfFile == nil {
 		err = genNewConfByConf(postConf, defaultConf, newConf, pikaSep)
-	}else{
+	} else {
 		var fileConf ServerFileConf
 		err = genNewConfByFile(postConf.ConfFile, newConf)
 		fileConf.Port = postConf.Port
@@ -613,17 +608,17 @@ func CreatePika(postConf PikaConf) (int, string) {
 		}
 	}
 	if err != nil {
-		log.WarnErrorf(err,"create %s failed", newConf)
+		log.WarnErrorf(err, "create %s failed", newConf)
 		return rpc.ApiResponseError(err)
 	}
 
 	log.Infof("create %s success.\n", newConf)
 
-	cmd := "fab -f " + fabfile + " -H " + host + " deploy_pika:port='" + strconv.Itoa(port) + 
-			"',conf_name='" + confName + "'"
+	cmd := "fab -f " + fabfile + " -H " + host + " deploy_pika:port='" + strconv.Itoa(port) +
+		"',conf_name='" + confName + "'"
 
 	ok, detail := doExecmd(cmd)
-	if ok  {
+	if ok {
 		log.Infof("Success to start pika[%s:%d]\n", host, port)
 	} else {
 		log.Warnf("Failed to start pika[%s:%d]\n", host, port)
@@ -633,10 +628,10 @@ func CreatePika(postConf PikaConf) (int, string) {
 
 	//删除配置文件,先留着以便查询，不占空间，写时可以覆盖
 	/*
-	err = os.Remove(newConf)
-	if err != nil {
-		log.WarnErrorf(err, "delete %s failed", newConf)
-	}*/
+		err = os.Remove(newConf)
+		if err != nil {
+			log.WarnErrorf(err, "delete %s failed", newConf)
+		}*/
 
 	return rpc.ApiResponseJson(detail)
 }
@@ -646,21 +641,21 @@ func CreateRedis(postConf RedisConf) (int, string) {
 	port := postConf.Port
 
 	//判断配置项是否为空
-	if host == "" || ( port <= 0 || port >= 65535) {
+	if host == "" || (port <= 0 || port >= 65535) {
 		return rpc.ApiResponseError(errors.New("host or port is invalid"))
 	}
 
 	//保存新配置文件
 	//binDir = "./assets/bin"  redisConfName = "redis.conf"  upLoadDir = "upLoadDir"
 	defaultConf := filepath.Join(binDir, redisConfName)
-	confName := "redis_" +  host + "_" + strconv.Itoa(port) + ".conf"
+	confName := "redis_" + host + "_" + strconv.Itoa(port) + ".conf"
 	newConf := filepath.Join(binDir, upLoadDir, confName)
 
 	//redisSep = " "
 	var err error
-	if postConf.ConfFile == nil{
+	if postConf.ConfFile == nil {
 		err = genNewConfByConf(postConf, defaultConf, newConf, redisSep)
-	}else{
+	} else {
 		var fileConf ServerFileConf
 		err = genNewConfByFile(postConf.ConfFile, newConf)
 		fileConf.Port = postConf.Port
@@ -669,17 +664,17 @@ func CreateRedis(postConf RedisConf) (int, string) {
 		}
 	}
 	if err != nil {
-		log.WarnErrorf(err,"create %s failed", newConf)
+		log.WarnErrorf(err, "create %s failed", newConf)
 		return rpc.ApiResponseError(err)
 	}
 
 	log.Infof("create %s success.\n", newConf)
 
-	cmd := "fab -f " + fabfile + " -H " + host + " deploy_redis:port='" + strconv.Itoa(port) + 
-			"',conf_name='" + confName + "'"
+	cmd := "fab -f " + fabfile + " -H " + host + " deploy_redis:port='" + strconv.Itoa(port) +
+		"',conf_name='" + confName + "'"
 
 	ok, detail := doExecmd(cmd)
-	if ok  {
+	if ok {
 		log.Infof("Success to start redis[%s:%d]\n", host, port)
 	} else {
 		log.Warnf("Failed to start redis[%s:%d]\n", host, port)
@@ -689,15 +684,15 @@ func CreateRedis(postConf RedisConf) (int, string) {
 
 	//删除配置文件,先留着以便查询，不占空间，写时可以覆盖
 	/*
-	err = os.Remove(newConf)
-	if err != nil {
-		log.WarnErrorf(err, "delete %s failed", newConf)
-	}*/
+		err = os.Remove(newConf)
+		if err != nil {
+			log.WarnErrorf(err, "delete %s failed", newConf)
+		}*/
 
 	return rpc.ApiResponseJson(detail)
 }
 
-func sendFile(r render.Render, file string){
+func sendFile(r render.Render, file string) {
 	buf, err := ioutil.ReadFile(file)
 	if err != nil {
 		log.WarnErrorf(err, "ReadFile %s failed", file)
@@ -727,38 +722,38 @@ func GetRedisDefaultConf(r render.Render) {
 	sendFile(r, conf)
 }
 
-func downLoadConf(host string, port int, serviceType string) (string, error){
-	if host == "" || ( port <= 0 || port >= 65535) {
+func downLoadConf(host string, port int, serviceType string) (string, error) {
+	if host == "" || (port <= 0 || port >= 65535) {
 		return "", errors.New("host or port is invalid")
 	}
 
 	var confName string
-	var fabFunc	string
+	var fabFunc string
 
 	switch serviceType {
-		case "dashboard":
-			confName = "dashboard_" +  host + "_" + strconv.Itoa(port) + ".toml"
-			fabFunc = "get_dashboard_conf"
-		case "proxy":
-			confName = "proxy_" +  host + "_" + strconv.Itoa(port) + ".toml"
-			fabFunc = "get_proxy_conf"
-		case "pika":
-			confName = "pika_" +  host + "_" + strconv.Itoa(port) + ".conf"
-			fabFunc = "get_pika_conf"
-		case "redis":
-			confName = "redis_" +  host + "_" + strconv.Itoa(port) + ".conf"
-			fabFunc = "get_redis_conf"
-		default:
-			detail := "cant kown " + serviceType + " type"
-			return "", errors.New(detail)
+	case "dashboard":
+		confName = "dashboard_" + host + "_" + strconv.Itoa(port) + ".toml"
+		fabFunc = "get_dashboard_conf"
+	case "proxy":
+		confName = "proxy_" + host + "_" + strconv.Itoa(port) + ".toml"
+		fabFunc = "get_proxy_conf"
+	case "pika":
+		confName = "pika_" + host + "_" + strconv.Itoa(port) + ".conf"
+		fabFunc = "get_pika_conf"
+	case "redis":
+		confName = "redis_" + host + "_" + strconv.Itoa(port) + ".conf"
+		fabFunc = "get_redis_conf"
+	default:
+		detail := "cant kown " + serviceType + " type"
+		return "", errors.New(detail)
 	}
 
 	//保存新配置文件
 	downloadConf := filepath.Join(binDir, downLoadDir, confName)
-	cmd := "fab -f " + fabfile + " -H " + host + " " + fabFunc +":port='" + strconv.Itoa(port) + 
-			"',conf_name='" + confName + "'"
+	cmd := "fab -f " + fabfile + " -H " + host + " " + fabFunc + ":port='" + strconv.Itoa(port) +
+		"',conf_name='" + confName + "'"
 	ok, detail := doExecmd(cmd)
-	if ok  {
+	if ok {
 		log.Infof("Success to download %s\n", downloadConf)
 	} else {
 		log.Warnf("Failed to download %s\n", downloadConf)
@@ -769,12 +764,12 @@ func downLoadConf(host string, port int, serviceType string) (string, error){
 	return downloadConf, nil
 }
 
-//当下载文件失败时，通过r.Text返回状态码和失败信息
+// 当下载文件失败时，通过r.Text返回状态码和失败信息
 func GetDashboardConf(r render.Render, params martini.Params) {
 	addr := params["addr"]
 	host, port := parseAddr(addr)
 
-	if host == "" || ( port <= 0 || port >= 65535) {
+	if host == "" || (port <= 0 || port >= 65535) {
 		r.Text(rpc.ApiResponseError(errors.New("host or port is invalid")))
 		return
 	}
@@ -792,7 +787,7 @@ func GetProxyConf(r render.Render, params martini.Params) {
 	addr := params["addr"]
 	host, port := parseAddr(addr)
 
-	if host == "" || ( port <= 0 || port >= 65535) {
+	if host == "" || (port <= 0 || port >= 65535) {
 		r.Text(rpc.ApiResponseError(errors.New("host or port is invalid")))
 		return
 	}
@@ -810,12 +805,12 @@ func GetPikaConf(r render.Render, params martini.Params) {
 	addr := params["addr"]
 	host, port := parseAddr(addr)
 
-	if host == "" || ( port <= 0 || port >= 65535) {
+	if host == "" || (port <= 0 || port >= 65535) {
 		r.Text(rpc.ApiResponseError(errors.New("host or port is invalid")))
 		return
 	}
 
-	downloadConf, err := downLoadConf(host, port,  "pika")
+	downloadConf, err := downLoadConf(host, port, "pika")
 	if err != nil {
 		r.Text(rpc.ApiResponseError(err))
 		return
@@ -828,7 +823,7 @@ func GetRedisConf(r render.Render, params martini.Params) {
 	addr := params["addr"]
 	host, port := parseAddr(addr)
 
-	if host == "" || ( port <= 0 || port >= 65535) {
+	if host == "" || (port <= 0 || port >= 65535) {
 		r.Text(rpc.ApiResponseError(errors.New("host or port is invalid")))
 		return
 	}
@@ -842,16 +837,16 @@ func GetRedisConf(r render.Render, params martini.Params) {
 	sendFile(r, downloadConf)
 }
 
-func DestroyPika(r render.Render, params martini.Params) (int, string){
+func DestroyPika(r render.Render, params martini.Params) (int, string) {
 	addr := params["addr"]
 	host, port := parseAddr(addr)
 
-	if host == "" || ( port <= 0 || port >= 65535) {
+	if host == "" || (port <= 0 || port >= 65535) {
 		return rpc.ApiResponseError(errors.New("host or port is invalid"))
 	}
 
 	ok, detail := destroyServer(host, port, "pika")
-	if ok  {
+	if ok {
 		log.Infof("Success to destroy Pika [%s]\n", addr)
 	} else {
 		log.Warnf("Failed to destroy Pika [%s]\n", addr)
@@ -861,23 +856,23 @@ func DestroyPika(r render.Render, params martini.Params) (int, string){
 	return rpc.ApiResponseJson(detail)
 }
 
-func DestroyRedis(r render.Render, params martini.Params) (int, string){
+func DestroyRedis(r render.Render, params martini.Params) (int, string) {
 	addr := params["addr"]
 	host, port := parseAddr(addr)
 
-	if host == "" || ( port <= 0 || port >= 65535) {
+	if host == "" || (port <= 0 || port >= 65535) {
 		return rpc.ApiResponseError(errors.New("host or port is invalid"))
 	}
 
 	ok, detail := destroyServer(host, port, "redis")
-	if ok  {
+	if ok {
 		log.Infof("Success to destroy Redis [%s]\n", addr)
 	} else {
 		log.Warnf("Failed to destroy Redis [%s]\n", addr)
 		log.Warnf("out : %s\n", detail)
 		return rpc.ApiResponseError(errors.New(detail))
 	}
-	
+
 	return rpc.ApiResponseJson(detail)
 }
 
@@ -885,22 +880,22 @@ func destroyServer(host string, port int, serviceType string) (bool, string) {
 	var fabFunc string
 
 	switch serviceType {
-		case "redis":
-			fabFunc = "destroy_redis"
-		case "pika":
-			fabFunc = "destroy_pika"
-		default:
-			detail := "cant kown " + serviceType + " type"
-			return false, detail
+	case "redis":
+		fabFunc = "destroy_redis"
+	case "pika":
+		fabFunc = "destroy_pika"
+	default:
+		detail := "cant kown " + serviceType + " type"
+		return false, detail
 	}
 
-	cmd := "fab -f " + fabfile + " -H " + host + " " + fabFunc +":port='" + strconv.Itoa(port) + "'"
+	cmd := "fab -f " + fabfile + " -H " + host + " " + fabFunc + ":port='" + strconv.Itoa(port) + "'"
 	return doExecmd(cmd)
 }
 
 func parseAddr(addr string) (string, int) {
 	addrArray := strings.Split(strings.TrimSpace(addr), ":")
-	if (len(addrArray) != 2) {
+	if len(addrArray) != 2 {
 		return "", -1
 	}
 

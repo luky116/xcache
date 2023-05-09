@@ -128,7 +128,7 @@ func (s *Topom) ReinitProxy(token string) error {
 	defer s.mu.Unlock()
 
 	// 当使用mysql存储集群节点并且dashboard为slave时，强制重新去mysql上获取最新的节点信息
-	if s.config.MasterProduct!="" {
+	if s.config.MasterProduct != "" {
 		s.dirtyCacheAll()
 	}
 
@@ -155,7 +155,7 @@ func (s *Topom) ReinitAllProxy() error {
 	for t, p := range ctx.proxy {
 		if p == nil {
 			log.Warnf("proxy-[%s] doesn't exist", t)
-			continue 
+			continue
 		}
 
 		c := s.newProxyClient(p)

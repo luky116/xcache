@@ -5,9 +5,9 @@ package topom
 
 import (
 	"sort"
-	"time"
-	"strings"
 	"strconv"
+	"strings"
+	"time"
 
 	rbtree "github.com/emirpasic/gods/trees/redblacktree"
 
@@ -22,7 +22,7 @@ func (s *Topom) SlotCreateAction(sid int, gid int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.config.MasterProduct != ""  {
+	if s.config.MasterProduct != "" {
 		return errors.Errorf("dashboard cannot create slots action!")
 	}
 
@@ -61,7 +61,7 @@ func (s *Topom) SlotCreateActionSome(groupFrom, groupTo int, numSlots int) error
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.config.MasterProduct != ""  {
+	if s.config.MasterProduct != "" {
 		return errors.Errorf("dashboard cannot create slots action!")
 	}
 
@@ -70,7 +70,7 @@ func (s *Topom) SlotCreateActionSome(groupFrom, groupTo int, numSlots int) error
 		return err
 	}
 
-	if (groupFrom == groupTo) {
+	if groupFrom == groupTo {
 		return errors.Errorf("Slots alreay on Group-[%d]!", groupTo)
 	}
 
@@ -120,7 +120,7 @@ func (s *Topom) SlotCreateActionRange(beg, end int, gid int, must bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.config.MasterProduct != ""  {
+	if s.config.MasterProduct != "" {
 		return errors.Errorf("dashboard cannot create slots action!")
 	}
 
@@ -183,7 +183,7 @@ func (s *Topom) SlotRemoveAction(sid int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.config.MasterProduct != ""  {
+	if s.config.MasterProduct != "" {
 		return errors.Errorf("dashboard cannot create slots action!")
 	}
 
@@ -215,7 +215,7 @@ func (s *Topom) SlotRemoveActionAll() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.config.MasterProduct != ""  {
+	if s.config.MasterProduct != "" {
 		return errors.Errorf("dashboard cannot create slots action!")
 	}
 
@@ -234,7 +234,7 @@ func (s *Topom) SlotRemoveActionAll() error {
 			Id:      m.Id,
 			GroupId: m.GroupId,
 		}
-		if err := s.storeUpdateSlotMapping(m); err != nil{
+		if err := s.storeUpdateSlotMapping(m); err != nil {
 			return err
 		}
 	}
@@ -461,7 +461,6 @@ func (s *Topom) newSlotActionExecutor(sid int) (func(db int) (remains int, nextd
 		var from, dest string
 		from = ctx.getGroupMaster(m.GroupId)
 		dest = ctx.getGroupMaster(m.Action.TargetId)
-		
 
 		s.action.executor.Incr()
 
@@ -540,7 +539,7 @@ func (s *Topom) SlotsAssignGroup(slots []*models.SlotMapping) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.config.MasterProduct != ""  {
+	if s.config.MasterProduct != "" {
 		return errors.Errorf("dashboard cannot create slots action!")
 	}
 
@@ -595,7 +594,7 @@ func (s *Topom) SlotsAssignOffline(slots []*models.SlotMapping) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.config.MasterProduct != ""  {
+	if s.config.MasterProduct != "" {
 		return errors.Errorf("dashboard cannot create slots action!")
 	}
 
@@ -636,7 +635,7 @@ func (s *Topom) SlotsRebalance(confirm bool) (map[int]int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.config.MasterProduct != ""  {
+	if s.config.MasterProduct != "" {
 		return nil, errors.Errorf("dashboard cannot create slots action!")
 	}
 
@@ -885,10 +884,10 @@ func (s *Topom) getSlotsList(slots string, srcGid, dstGid int) ([]int, error) {
 		} else if len(slotPlanPair) == 2 {
 			if num, err := strconv.Atoi(slotPlanPair[0]); err == nil {
 				beg = num
-			} 
+			}
 			if num, err := strconv.Atoi(slotPlanPair[1]); err == nil {
 				end = num
-			} 
+			}
 		} else {
 			return slice, errors.Errorf("invalid expansion plan: %s", slots)
 		}

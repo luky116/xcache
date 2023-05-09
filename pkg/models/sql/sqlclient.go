@@ -4,10 +4,10 @@
 package sqlclient
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"sync"
-	"database/sql"
 
 	"github.com/CodisLabs/codis/pkg/utils/errors"
 	"github.com/CodisLabs/codis/pkg/utils/log"
@@ -16,10 +16,10 @@ import (
 )
 
 const (
-	ReadNode    = "read_node"
-	CreateNode  = "create_node"
-	DeleteNode  = "delete_node"
-	UpdateNode  = "update_node"
+	ReadNode   = "read_node"
+	CreateNode = "create_node"
+	DeleteNode = "delete_node"
+	UpdateNode = "update_node"
 )
 
 var ErrClosedClient = errors.New("use of closed mysql client")
@@ -29,12 +29,12 @@ var table = "codis_dashboard"
 type Client struct {
 	sync.Mutex
 	dbmap *gorp.DbMap
-	
+
 	closed bool
 }
 
 func New(addrlist string, username string, password string, database string) (*Client, error) {
-	if (addrlist == "" || password == "" || username == "" || database == "") {
+	if addrlist == "" || password == "" || username == "" || database == "" {
 		log.Warnf("initDb: invalid params")
 		return nil, errors.New("invalid params")
 	}
@@ -46,8 +46,8 @@ func New(addrlist string, username string, password string, database string) (*C
 	return &Client{dbmap: dbmap, closed: false}, nil
 }
 
-func initDb(addr string, user string , pswd string , database string) (*gorp.DbMap, error) {
-	if (addr == "" || user == "" || pswd == "" || database == "") {
+func initDb(addr string, user string, pswd string, database string) (*gorp.DbMap, error) {
+	if addr == "" || user == "" || pswd == "" || database == "" {
 		log.Warnf("initDb: invalid params")
 		return nil, errors.New("invalid params")
 	}
@@ -164,7 +164,7 @@ func (c *Client) List(path string, must bool) ([]string, error) {
 	if c.closed {
 		return nil, errors.Trace(ErrClosedClient)
 	}
-	
+
 	children, err := c.children(path)
 	if err == nil && len(children) == 0 && !must {
 		return nil, nil
@@ -180,7 +180,7 @@ func (c *Client) List(path string, must bool) ([]string, error) {
 func (c *Client) exec(path string, data []byte, opt string) (string, error) {
 	pathList := strings.Split(path[1:], "/")
 	pathDeep := len(pathList)
-	if  pathDeep < 3 || pathDeep > 4 {
+	if pathDeep < 3 || pathDeep > 4 {
 		return "", errors.New("invalid path")
 	}
 
@@ -197,10 +197,9 @@ func (c *Client) exec(path string, data []byte, opt string) (string, error) {
 		}
 	} else if pathDeep == 4 {
 		switch pathList[2] {
-		case "topom","sentinel" :
-			;
+		case "topom", "sentinel":
 
-		case "proxy", "group", "slots" :
+		case "proxy", "group", "slots":
 			sql = formatSql(table, productName, nodeType, pathList[3], string(data[:]), opt)
 
 		default:
@@ -212,14 +211,14 @@ func (c *Client) exec(path string, data []byte, opt string) (string, error) {
 	if opt == ReadNode {
 		nodeJson, err := c.querySql(sql)
 		if err != nil {
-			log.WarnErrorf(err,"exec '%s' failed", sql)
+			log.WarnErrorf(err, "exec '%s' failed", sql)
 			return "", err
 		}
 		resp = nodeJson
 	} else {
 		_, err := c.execSql(sql)
 		if err != nil {
-			log.WarnErrorf(err,"exec '%s' failed", sql)
+			log.WarnErrorf(err, "exec '%s' failed", sql)
 			return "", err
 		}
 	}
@@ -229,12 +228,12 @@ func (c *Client) exec(path string, data []byte, opt string) (string, error) {
 func (c *Client) children(path string) ([]string, error) {
 	pathList := strings.Split(path[1:], "/")
 	pathDeep := len(pathList)
-	if  pathDeep != 3 {
+	if pathDeep != 3 {
 		return nil, errors.New("invalid path")
 	}
 
 	productName := pathList[1]
-	nodeType := "codis3_" +  pathList[2]
+	nodeType := "codis3_" + pathList[2]
 	sql := "select node_name from " + table + " where product_name='" + productName + "' and node_type='" + nodeType + "';"
 
 	rows, err := c.dbmap.Db.Query(sql)
@@ -250,7 +249,7 @@ func (c *Client) children(path string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		children = append(children, path + "/" + node)
+		children = append(children, path+"/"+node)
 	}
 
 	err = rows.Err()
@@ -313,13 +312,13 @@ func (c *Client) querySql(sql string) (string, error) {
 func formatSql(table, productName string, nodeType, nodeName string, nodeValue string, opt string) string {
 	sql := ""
 	switch opt {
-	case ReadNode :
+	case ReadNode:
 		sql = "select node_value from " + table + " where product_name='" + productName + "' and node_type='" + nodeType + "' and node_name='" + nodeName + "';"
 
-	case CreateNode, UpdateNode :
+	case CreateNode, UpdateNode:
 		sql = "insert into " + table + " (product_name, node_type, node_name, node_value) values('" + productName + "', '" + nodeType + "', '" + nodeName + "', '" + nodeValue + "') on duplicate key update product_name='" + productName + "', node_type='" + nodeType + "', node_name='" + nodeName + "', node_value='" + nodeValue + "';"
 
-	case DeleteNode :
+	case DeleteNode:
 		sql = "delete from " + table + " where product_name='" + productName + "' and node_type='" + nodeType + "' and node_name='" + nodeName + "';"
 
 	default:

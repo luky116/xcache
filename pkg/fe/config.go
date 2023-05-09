@@ -50,18 +50,18 @@ mysql_database = ""
 `
 
 type Config struct {
-	MysqlAddr     string  `toml:"mysql_addr"`
-	MysqlUsername string  `toml:"mysql_username"`
-	MysqlPassword string  `toml:"mysql_password" json:"-"`
-	MysqlDatabase string  `toml:"mysql_database"`
+	MysqlAddr     string `toml:"mysql_addr"`
+	MysqlUsername string `toml:"mysql_username"`
+	MysqlPassword string `toml:"mysql_password" json:"-"`
+	MysqlDatabase string `toml:"mysql_database"`
 	//TablePrefix   string  `toml:"table_prefix"`
-	Ncpu          int     `toml:"ncpu"`
-	Log           string  `toml:"log"`
-	ExpireLogDays int     `toml:"expire_log_days"`
-	LogLevel      string  `toml:"log_level"`
-	DashboardList string  `toml:"dashboard_list"`
-	Listen        string  `toml:"listen"`
-	PidFile       string  `toml:"pidfile"`
+	Ncpu          int    `toml:"ncpu"`
+	Log           string `toml:"log"`
+	ExpireLogDays int    `toml:"expire_log_days"`
+	LogLevel      string `toml:"log_level"`
+	DashboardList string `toml:"dashboard_list"`
+	Listen        string `toml:"listen"`
+	PidFile       string `toml:"pidfile"`
 }
 
 func NewDefaultConfig() *Config {

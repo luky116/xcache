@@ -154,7 +154,7 @@ func (s *Proxy) setup(config *Config) error {
 			}
 		} else {
 			if len(config.JodisProxySubDir) != 0 {
-				s.model.JodisPath = models.JodisPath(config.ProductName + "/" + config.JodisProxySubDir, s.model.Token)
+				s.model.JodisPath = models.JodisPath(config.ProductName+"/"+config.JodisProxySubDir, s.model.Token)
 			} else {
 				s.model.JodisPath = models.JodisPath(config.ProductName, s.model.Token)
 			}
@@ -225,7 +225,7 @@ func (s *Proxy) Config() Config {
 	return *s.config
 }
 
-//这个接口不再使用，只是保留给http接口用
+// 这个接口不再使用，只是保留给http接口用
 func (s *Proxy) SetConfig(key, value string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -245,7 +245,7 @@ func (s *Proxy) SetConfig(key, value string) error {
 
 	case "proxy_refresh_state_period":
 		p := &(s.config.ProxyRefreshStatePeriod)
-		err :=  p.UnmarshalText([]byte(value))
+		err := p.UnmarshalText([]byte(value))
 		if err != nil {
 			return err
 		}
@@ -292,9 +292,9 @@ func (s *Proxy) SetConfig(key, value string) error {
 			return errors.New("invalid slowlog_log_slower_than")
 		} else {
 			s.config.SlowlogLogSlowerThan = i64
-			StatsSetLogSlowerThan( i64 )
+			StatsSetLogSlowerThan(i64)
 		}
-		
+
 	case "slowlog_max_len":
 		i64, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
@@ -347,7 +347,7 @@ func (s *Proxy) ConfigSet(key, value string) *redis.Resp {
 
 	case "proxy_refresh_state_period":
 		p := &(s.config.ProxyRefreshStatePeriod)
-		err :=  p.UnmarshalText([]byte(value))
+		err := p.UnmarshalText([]byte(value))
 		if err != nil {
 			return redis.NewErrorf("err：%s.", err)
 		}
@@ -402,10 +402,10 @@ func (s *Proxy) ConfigSet(key, value string) *redis.Resp {
 			return redis.NewErrorf("invalid slowlog_log_slower_than")
 		} else {
 			s.config.SlowlogLogSlowerThan = i64
-			StatsSetLogSlowerThan( i64 )
+			StatsSetLogSlowerThan(i64)
 			return redis.NewString([]byte("OK"))
 		}
-		
+
 	case "slowlog_max_len":
 		i64, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
@@ -469,7 +469,7 @@ func (s *Proxy) ConfigSet(key, value string) *redis.Resp {
 		if err != nil {
 			return redis.NewErrorf("err：%s.", err)
 		}
-		if i64!=0 && i64!=1{
+		if i64 != 0 && i64 != 1 {
 			return redis.NewErrorf("invalid state for xmonitor. Try 0 or 1")
 		}
 		XMonitorSetMonitorState(i64)
@@ -540,7 +540,7 @@ func (s *Proxy) ConfigSet(key, value string) *redis.Resp {
 		if err != nil {
 			return redis.NewErrorf("err：%s.", err)
 		}
-		if i64!=0 && i64!=1{
+		if i64 != 0 && i64 != 1 {
 			return redis.NewErrorf("invalid state for breaker state. Try 0 or 1")
 		}
 		s.config.BreakerEnabled = i64
@@ -642,7 +642,7 @@ func (s *Proxy) ConfigGet(key string) *redis.Resp {
 	case "backend_replica_quick":
 		return redis.NewBulkBytes([]byte(strconv.Itoa(s.config.BackendReplicaQuick)))
 	case "slowlog_log_slower_than":
-		return redis.NewBulkBytes([]byte(strconv.FormatInt(s.config.SlowlogLogSlowerThan,10)))
+		return redis.NewBulkBytes([]byte(strconv.FormatInt(s.config.SlowlogLogSlowerThan, 10)))
 	case "slowlog_max_len":
 		return redis.NewBulkBytes([]byte(strconv.FormatInt(s.config.SlowlogMaxLen, 10)))
 	case "quick_cmd_list":
@@ -704,7 +704,7 @@ func (s *Proxy) ConfigGet(key string) *redis.Resp {
 			redis.NewBulkBytes([]byte("backend_replica_quick")),
 			redis.NewBulkBytes([]byte(strconv.Itoa(s.config.BackendReplicaQuick))),
 			redis.NewBulkBytes([]byte("slowlog_log_slower_than")),
-			redis.NewBulkBytes([]byte(strconv.FormatInt(s.config.SlowlogLogSlowerThan,10))),
+			redis.NewBulkBytes([]byte(strconv.FormatInt(s.config.SlowlogLogSlowerThan, 10))),
 			redis.NewBulkBytes([]byte("slowlog_max_len")),
 			redis.NewBulkBytes([]byte(strconv.FormatInt(s.config.SlowlogMaxLen, 10))),
 			redis.NewBulkBytes([]byte("quick_cmd_list")),
@@ -756,21 +756,21 @@ func (s *Proxy) ClusterSlots() *redis.Resp {
 	}
 
 	type Node struct {
-		IP 		string
-		Port 	string
-		RunId 	string
+		IP    string
+		Port  string
+		RunId string
 	}
 
 	type NodeSlots struct {
-		Start int
-		End int
+		Start  int
+		End    int
 		Master *Node
-		Slaves  []*Node
+		Slaves []*Node
 	}
 
 	type GroupNodes struct {
 		Master *Node
-		Slaves  []*Node
+		Slaves []*Node
 	}
 
 	results := make([]*NodeSlots, 0)
@@ -783,7 +783,7 @@ func (s *Proxy) ClusterSlots() *redis.Resp {
 		if slot == nil {
 			return redis.NewErrorf("cant get slots info.")
 		}
-		
+
 		//第一次添加节点信息
 		if _, ok := masters[slot.BackendAddr]; !ok {
 			host, port, err := net.SplitHostPort(slot.BackendAddr)
@@ -792,17 +792,17 @@ func (s *Proxy) ClusterSlots() *redis.Resp {
 			}
 
 			masters[slot.BackendAddr] = &GroupNodes{
-				Master:&Node{
-					IP:host,
-					Port:port,
-					RunId:slot.BackendAddr,
+				Master: &Node{
+					IP:    host,
+					Port:  port,
+					RunId: slot.BackendAddr,
 				},
 			}
 		}
 	}
 
 	//获取每个master中的slot信息
-	for k, v := range masters{
+	for k, v := range masters {
 		var start = -1
 
 		for i := range slots {
@@ -814,22 +814,22 @@ func (s *Proxy) ClusterSlots() *redis.Resp {
 			}
 
 			//遍历到不属于当前节点是slot或遍历结束
-			if start != -1 && (slot.BackendAddr != k || i == MaxSlotNum - 1) {
+			if start != -1 && (slot.BackendAddr != k || i == MaxSlotNum-1) {
 				nodeSlots := &NodeSlots{
-					Start:start,
-					Master:v.Master,
-					Slaves:v.Slaves,
+					Start:  start,
+					Master: v.Master,
+					Slaves: v.Slaves,
 				}
 
 				//最后一个slot属于当前节点
-				if slot.BackendAddr == k && i == MaxSlotNum - 1 {
+				if slot.BackendAddr == k && i == MaxSlotNum-1 {
 					i++
 				}
 
 				if start == i-1 {
 					nodeSlots.End = start
 				} else {
-					nodeSlots.End = i-1
+					nodeSlots.End = i - 1
 				}
 
 				results = append(results, nodeSlots)
@@ -842,13 +842,13 @@ func (s *Proxy) ClusterSlots() *redis.Resp {
 	var array = make([]*redis.Resp, len(results))
 	for i := range results {
 		array[i] = redis.NewArray([]*redis.Resp{
-		redis.NewInt([]byte(strconv.Itoa(results[i].Start))),
-		redis.NewInt([]byte(strconv.Itoa(results[i].End))),
-		redis.NewArray([]*redis.Resp{
-			redis.NewBulkBytes([]byte(results[i].Master.IP)),
-			redis.NewInt([]byte(results[i].Master.Port)),
-			redis.NewBulkBytes([]byte(results[i].Master.RunId)),
-		}),
+			redis.NewInt([]byte(strconv.Itoa(results[i].Start))),
+			redis.NewInt([]byte(strconv.Itoa(results[i].End))),
+			redis.NewArray([]*redis.Resp{
+				redis.NewBulkBytes([]byte(results[i].Master.IP)),
+				redis.NewInt([]byte(results[i].Master.Port)),
+				redis.NewBulkBytes([]byte(results[i].Master.RunId)),
+			}),
 		})
 	}
 	return redis.NewArray(array)
@@ -863,21 +863,21 @@ func (s *Proxy) ClusterNodes() *redis.Resp {
 	}
 
 	type Node struct {
-		IP 		string
-		Port 	string
-		RunId 	string
+		IP    string
+		Port  string
+		RunId string
 	}
 
 	type NodeSlots struct {
-		Start int
-		End int
+		Start  int
+		End    int
 		Master *Node
-		Slaves  []*Node
+		Slaves []*Node
 	}
 
 	type GroupNodes struct {
 		Master *Node
-		Slaves  []*Node
+		Slaves []*Node
 	}
 
 	results := make([]string, 0)
@@ -899,17 +899,17 @@ func (s *Proxy) ClusterNodes() *redis.Resp {
 			}
 
 			masters[slot.BackendAddr] = &GroupNodes{
-				Master:&Node{
-					IP:host,
-					Port:port,
-					RunId:slot.BackendAddr,
+				Master: &Node{
+					IP:    host,
+					Port:  port,
+					RunId: slot.BackendAddr,
 				},
 			}
 		}
 	}
 
 	//获取每个master中的slot信息
-	for k, v := range masters{
+	for k, v := range masters {
 		nodeInfo := fmt.Sprintf("%.40s %s:%s@%s master - 0 0 0 connected", v.Master.RunId, v.Master.IP, v.Master.Port, v.Master.Port)
 		var start = -1
 
@@ -922,15 +922,15 @@ func (s *Proxy) ClusterNodes() *redis.Resp {
 			}
 
 			//遍历到不属于当前节点是slot或遍历结束
-			if start != -1 && (slot.BackendAddr != k || i == MaxSlotNum - 1) {
+			if start != -1 && (slot.BackendAddr != k || i == MaxSlotNum-1) {
 				nodeSlots := &NodeSlots{
-					Start:start,
-					Master:v.Master,
-					Slaves:v.Slaves,
+					Start:  start,
+					Master: v.Master,
+					Slaves: v.Slaves,
 				}
 
 				//最后一个slot属于当前节点
-				if slot.BackendAddr == k && i == MaxSlotNum - 1 {
+				if slot.BackendAddr == k && i == MaxSlotNum-1 {
 					i++
 				}
 
@@ -938,7 +938,7 @@ func (s *Proxy) ClusterNodes() *redis.Resp {
 					nodeSlots.End = start
 					nodeInfo += " " + strconv.Itoa(start)
 				} else {
-					nodeSlots.End = i-1
+					nodeSlots.End = i - 1
 					nodeInfo += " " + strconv.Itoa(start) + "-" + strconv.Itoa(nodeSlots.End)
 				}
 
@@ -1439,7 +1439,7 @@ func (s *Proxy) Stats(flags StatsFlags) *Stats {
 	return stats
 }
 
-func (s *Proxy)AutoPurgeLog() {
+func (s *Proxy) AutoPurgeLog() {
 	for {
 		if s.IsClosed() {
 			return
@@ -1466,10 +1466,10 @@ func (s *Proxy) PurgeLog(logfile string, expireLogDays int) error {
 		return nil
 	}
 
-	for i:=0; i<logPathLen; i++ {
-		if i == logPathLen - 1 {
+	for i := 0; i < logPathLen; i++ {
+		if i == logPathLen-1 {
 			logPrefix = logPathList[i]
-			break;
+			break
 		} else {
 			logPath += logPathList[i] + "/"
 		}
@@ -1498,12 +1498,12 @@ func (s *Proxy) PurgeLog(logfile string, expireLogDays int) error {
 	for _, v := range fileList {
 		if strings.Contains(v.Name(), logPrefix) {
 			//DelExpireLog(v.Name(), log_path, log_prefix)
-			logSuffix := strings.Split(v.Name(), logPrefix + ".")
+			logSuffix := strings.Split(v.Name(), logPrefix+".")
 			if len(logSuffix) != 0 {
-				logDate := logSuffix[len(logSuffix) - 1]
+				logDate := logSuffix[len(logSuffix)-1]
 				if IsExpireDate(logDate, int64(expireLogDays)) {
 					log.Warnf("rm logfile: %s", v.Name())
-					os.Remove(logPath + v.Name());
+					os.Remove(logPath + v.Name())
 				}
 			}
 		}
@@ -1515,9 +1515,9 @@ func IsExpireDate(logDate string, expireLogDays int64) bool {
 	timeLayout := "2006-01-02"
 	localTime, _ := time.LoadLocation("Local")
 	theTime, _ := time.ParseInLocation(timeLayout, logDate, localTime)
-	timeStamp := theTime.Unix() 
-	if (time.Now().Unix() - timeStamp) > expireLogDays * 24 * 60 * 60 {
+	timeStamp := theTime.Unix()
+	if (time.Now().Unix() - timeStamp) > expireLogDays*24*60*60 {
 		return true
-	} 
+	}
 	return false
 }

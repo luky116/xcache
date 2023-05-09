@@ -103,5 +103,3 @@ func storeUpdateSentinel(p *models.Sentinel, store *models.Store) error {
 	}
 	return nil
 }
-
-
