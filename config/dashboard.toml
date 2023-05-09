@@ -1,0 +1,69 @@
+
+##################################################
+#                                                #
+#                  Codis-Dashboard               #
+#                                                #
+##################################################
+
+# Set runtime.GOMAXPROCS to N, default is 1.
+ncpu = 1
+
+# Set path/name of daliy rotated log file.
+log = "dashboard.log"
+
+# Expire-log-days, 0 means never expire
+expire_log_days = 30
+
+# Set the log-level, should be INFO,WARN,DEBUG or ERROR, default is INFO.
+log_level = "info"
+
+# Set pidfile
+pidfile = "dashboard.pid"
+
+# Set mysql server (such as localhost:3306), fe will report codis node to mysql.
+mysql_addr = ""
+mysql_username = ""
+mysql_password = ""
+mysql_database = ""
+
+
+# Set Codis Product Name/Auth.
+product_name = "codis-demo"
+product_auth = ""
+
+# Set bind address for admin(rpc), tcp only.
+admin_addr = "0.0.0.0:18080"
+
+# Set influxdb server (such as http://localhost:8086), dashboard will report metrics to influxdb.
+# Dashboard use another two dastbases to record more cmd delay info, database suffix is "_extend_1" and "_extend_2"
+metrics_report_influxdb_server = ""
+metrics_report_influxdb_period = "1s"
+metrics_report_influxdb_username = ""
+metrics_report_influxdb_password = ""
+metrics_report_influxdb_database = ""
+
+# Set arguments for data migration (only accept 'sync' & 'semi-async').
+migration_method = "sync"
+migration_parallel_slots = 100
+migration_async_maxbulks = 200
+migration_async_maxbytes = "32mb"
+migration_async_numkeys = 500
+migration_timeout = "30s"
+
+# Set configs for redis sentinel.
+sentinel_client_timeout = "10s"
+sentinel_quorum = 2
+sentinel_parallel_syncs = 1
+sentinel_down_after = "15s"
+sentinel_failover_timeout = "5m"
+sentinel_notification_script = ""
+sentinel_client_reconfig_script = ""
+
+
+# master mysql to reload 
+master_product = ""
+master_mysql_addr = ""
+master_mysql_username = ""
+master_mysql_password = ""
+master_mysql_database = ""
+
